@@ -53,4 +53,70 @@ app.post("/contacts/:id/tag", (req, res) => {
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
+app.put("/contacts/:id", (req, res) => {
+  try {
+    const contactId = parseInt(req.params.id);
+    const { name, email, linkedin, company } = req.body;
+
+    console.log("Updating contact:", contactId, "with data:", {
+      name,
+      email,
+      linkedin,
+      company,
+    });
+
+    const result = db
+      .prepare(
+        `
+      UPDATE contacts 
+      SET name = ?, email = ?, linkedin = ?, company = ? 
+      WHERE id = ?
+    `
+      )
+      .run(name, email, linkedin, company, contactId);
+
+    console.log("Update result:", result);
+
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      console.log("No contact found with ID:", contactId);
+      res.status(404).json({ error: "Contact not found" });
+    }
+  } catch (error) {
+    console.error("Error updating contact:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/contacts/:contactId/tags/:tagName", (req, res) => {
+  try {
+    const contactId = parseInt(req.params.contactId);
+    const tagName = req.params.tagName;
+
+    console.log("Deleting tag:", tagName, "from contact:", contactId);
+
+    const result = db
+      .prepare(
+        `
+      DELETE FROM tags 
+      WHERE contact_id = ? AND name = ?
+    `
+      )
+      .run(contactId, tagName);
+
+    console.log("Delete result:", result);
+
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      console.log("No tag found:", tagName, "for contact:", contactId);
+      res.status(404).json({ error: "Tag not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting tag:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));
