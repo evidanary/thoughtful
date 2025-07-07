@@ -31,7 +31,7 @@ function getRelativeTime(dateString) {
   return "just now";
 }
 
-const ContactProfilePreview = ({ contact }) => {
+const ContactProfilePreview = ({ contact, condensed = false }) => {
   // Use flat note fields from backend
   const mostRecentNote = contact.note_content || "";
   const NOTE_PREVIEW_CHAR_COUNT = 1000;
@@ -52,8 +52,8 @@ const ContactProfilePreview = ({ contact }) => {
   return (
     <div
       style={{
-        borderBottom: "1px solid #eee",
-        padding: "24px 0 16px 0",
+        borderBottom: condensed ? "none" : "1px solid #eee",
+        padding: condensed ? "12px 0" : "24px 0 16px 0",
         margin: 0,
         display: "flex",
         flexDirection: "column",
@@ -71,7 +71,7 @@ const ContactProfilePreview = ({ contact }) => {
           <Link
             to={`/profile/${contact.id}`}
             style={{
-              fontSize: 22,
+              fontSize: condensed ? 14 : 22,
               fontWeight: 600,
               color: "#4B0082",
               textDecoration: "none",
@@ -117,7 +117,7 @@ const ContactProfilePreview = ({ contact }) => {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  height: "20px", // Fixed height for consistency
+                  height: "20px",
                 }}
               >
                 🏢 {contact.company}
@@ -196,27 +196,30 @@ const ContactProfilePreview = ({ contact }) => {
             ))}
         </div>
       </div>
-      <div
-        style={{
-          marginTop: 10,
-          color: "#666",
-          fontSize: 13,
-          minHeight: 24,
-          maxHeight: 120,
-          overflow: "hidden",
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {mostRecentNote ? (
-          <>
-            <b>{noteDate}</b>
-            {": "}
-            {notePreview}
-          </>
-        ) : (
-          <span style={{ color: "#bbb" }}>(No notes yet)</span>
-        )}
-      </div>
+      {/* Notes section - only show if not condensed */}
+      {!condensed && (
+        <div
+          style={{
+            marginTop: 10,
+            color: "#666",
+            fontSize: 13,
+            minHeight: 24,
+            maxHeight: 120,
+            overflow: "hidden",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {mostRecentNote ? (
+            <>
+              <b>{noteDate}</b>
+              {": "}
+              {notePreview}
+            </>
+          ) : (
+            <span style={{ color: "#bbb" }}>(No notes yet)</span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
