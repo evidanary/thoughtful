@@ -32,17 +32,15 @@ function getRelativeTime(dateString) {
 }
 
 const ContactProfilePreview = ({ contact }) => {
-  // Find the most recent note
-  const mostRecentNoteObj =
-    contact.notes && contact.notes.length > 0 ? contact.notes[0] : null;
-  const mostRecentNote = mostRecentNoteObj ? mostRecentNoteObj.content : "";
+  // Use flat note fields from backend
+  const mostRecentNote = contact.note_content || "";
   const NOTE_PREVIEW_CHAR_COUNT = 1000;
   const notePreview =
     mostRecentNote.length > NOTE_PREVIEW_CHAR_COUNT
       ? mostRecentNote.slice(0, NOTE_PREVIEW_CHAR_COUNT) + "…"
       : mostRecentNote;
-  const noteDate = mostRecentNoteObj
-    ? formatDate(mostRecentNoteObj.created_at)
+  const noteDate = contact.note_created_at
+    ? formatDate(contact.note_created_at)
     : null;
   const lastUpdated =
     contact.updated_at ||
@@ -141,7 +139,7 @@ const ContactProfilePreview = ({ contact }) => {
           whiteSpace: "pre-wrap",
         }}
       >
-        {notePreview ? (
+        {mostRecentNote ? (
           <>
             <b>{noteDate}</b>
             {": "}

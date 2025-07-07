@@ -45,8 +45,8 @@ export const deleteNote = async (contactId, noteId) => {
   return res.data;
 };
 
-export const getAllContacts = async () => {
-  const res = await axios.get(`${API}/contacts`);
+export const getAllContacts = async (query = "") => {
+  const res = await axios.get(`${API}/contacts${query}`);
   return res.data;
 };
 

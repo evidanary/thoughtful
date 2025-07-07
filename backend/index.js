@@ -29,9 +29,87 @@ app.post("/contacts", (req, res) => {
 
 app.get("/contacts", (req, res) => {
   try {
-    const contacts = db
-      .prepare("SELECT * FROM contacts ORDER BY name COLLATE NOCASE")
-      .all();
+    // Parse filters from query parameters
+    const {
+      tags,
+      created_after,
+      created_before,
+      last_activity_after,
+      last_activity_before,
+    } = req.query;
+
+    // Build WHERE clauses and parameters
+    let whereClauses = [];
+    let params = {};
+
+    // Tag filter (contacts must have at least one of the specified tags)
+    if (tags) {
+      const tagList = tags.split(",").map((t) => t.trim());
+      whereClauses.push(`
+        c.id IN (
+          SELECT contact_id FROM tags WHERE name IN (${tagList
+            .map((_, i) => `@tag${i}`)
+            .join(",")})
+        )
+      `);
+      tagList.forEach((tag, i) => (params[`tag${i}`] = tag));
+    }
+
+    // Created date range filter
+    if (created_after) {
+      whereClauses.push("c.created_at >= @created_after");
+      params.created_after = created_after;
+    }
+    if (created_before) {
+      whereClauses.push("c.created_at <= @created_before");
+      params.created_before = created_before;
+    }
+
+    // Last activity date range filter (computed later)
+    let havingClauses = [];
+    if (last_activity_after) {
+      havingClauses.push("last_activity_date >= @last_activity_after");
+      params.last_activity_after = last_activity_after;
+    }
+    if (last_activity_before) {
+      havingClauses.push("last_activity_date <= @last_activity_before");
+      params.last_activity_before = last_activity_before;
+    }
+
+    // Main query: get contacts, most recent note, and last activity date
+    const query = `
+      SELECT
+        c.*,
+        rn.id AS note_id,
+        rn.content AS note_content,
+        rn.created_at AS note_created_at,
+        rn.updated_at AS note_updated_at,
+        -- Compute last activity date: max of contact.created_at, note.created_at, note.updated_at
+        MAX(
+          COALESCE(rn.created_at, c.created_at),
+          COALESCE(rn.updated_at, c.created_at),
+          c.created_at
+        ) AS last_activity_date
+      FROM contacts c
+      LEFT JOIN (
+        SELECT n1.*
+        FROM notes n1
+        INNER JOIN (
+          SELECT contact_id, MAX(created_at) AS max_created
+          FROM notes
+          GROUP BY contact_id
+        ) n2
+        ON n1.contact_id = n2.contact_id AND n1.created_at = n2.max_created
+      ) rn
+      ON c.id = rn.contact_id
+      ${whereClauses.length ? "WHERE " + whereClauses.join(" AND ") : ""}
+      GROUP BY c.id
+      ${havingClauses.length ? "HAVING " + havingClauses.join(" AND ") : ""}
+      ORDER BY last_activity_date DESC
+    `;
+
+    const contacts = db.prepare(query).all(params);
+
     res.json(contacts);
   } catch (error) {
     console.error("Error fetching contacts:", error);
