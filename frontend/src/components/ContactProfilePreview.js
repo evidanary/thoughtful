@@ -128,10 +128,43 @@ const ContactProfilePreview = ({ contact }) => {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  height: "20px", // Fixed height for consistency
+                  height: "20px",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  color: "#4B0082",
                 }}
+                onClick={() => {
+                  const email = encodeURIComponent(contact.email);
+                  const url = `https://mail.google.com/mail/u/0/#search/from:${email}+OR+to:${email}`;
+                  window.open(url, "_blank");
+                }}
+                title="Search emails with this contact"
               >
                 📧 {contact.email}
+              </span>
+            )}
+            {contact.linkedin && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "20px",
+                }}
+              >
+                <a
+                  href={contact.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#0077b5",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                  title={contact.linkedin}
+                >
+                  💼 LinkedIn
+                </a>
               </span>
             )}
           </div>
