@@ -1,13 +1,8 @@
 import { useEffect, useState } from "react";
 import { getAllContacts } from "../api/contacts";
+import { getAllViews } from "../api/views";
 import ContactProfilePreview from "./ContactProfilePreview";
-
-const TABS = [
-  { label: "All", filter: null },
-  { label: "Investors", filter: { tags: ["investor"] } },
-  { label: "Partners", filter: { tags: ["partner"] } },
-  // Add more tabs as needed
-];
+import FilterBar from "./FilterBar";
 
 function buildQueryParams(filter) {
   if (!filter) return "";
@@ -32,57 +27,77 @@ const ContactList = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [views, setViews] = useState([]);
+  const [selectedView, setSelectedView] = useState(0);
+  const [filters, setFilters] = useState({});
 
-  const fetchContacts = async (filter) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const query = buildQueryParams(filter);
-      const data = await getAllContacts(query);
-      setContacts(data);
-    } catch (err) {
-      setError("Failed to load contacts");
-    }
-    setLoading(false);
-  };
-
+  // Fetch views on mount
   useEffect(() => {
-    fetchContacts(TABS[selectedTab].filter);
-    // eslint-disable-next-line
-  }, [selectedTab]);
+    async function fetchViews() {
+      try {
+        const data = await getAllViews();
+        setViews(data);
+      } catch (err) {
+        console.error("Error fetching views:", err);
+      }
+    }
+    fetchViews();
+  }, []);
+
+  // Fetch contacts when selectedView or views change
+  useEffect(() => {
+    async function fetchContacts() {
+      setLoading(true);
+      setError(null);
+      try {
+        const viewFilter = views[selectedView]?.filter || {};
+        const mergedFilter = { ...viewFilter, ...filters };
+        const query = buildQueryParams(mergedFilter);
+        const data = await getAllContacts(query);
+        setContacts(data);
+      } catch (err) {
+        setError("Failed to load contacts");
+      }
+      setLoading(false);
+    }
+    if (views.length > 0) {
+      fetchContacts();
+    }
+  }, [selectedView, views, filters]);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 0" }}>
-      {/* Tabs */}
+      {/* Views as Tabs */}
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: 8,
-          marginBottom: 24,
+          marginBottom: 5,
         }}
       >
-        {TABS.map((tab, idx) => (
+        {views.map((view, idx) => (
           <button
-            key={tab.label}
-            onClick={() => setSelectedTab(idx)}
+            key={view.id}
+            onClick={() => setSelectedView(idx)}
             style={{
               padding: "8px 20px",
               borderRadius: 20,
               border: "none",
-              background: idx === selectedTab ? "#4B0082" : "#eee",
-              color: idx === selectedTab ? "#fff" : "#333",
+              background: idx === selectedView ? "#4B0082" : "#eee",
+              color: idx === selectedView ? "#fff" : "#333",
               fontWeight: 600,
               fontSize: 15,
               cursor: "pointer",
               marginBottom: 4,
             }}
+            title={view.description || ""}
           >
-            {tab.label}
+            {view.label}
           </button>
         ))}
       </div>
+      <FilterBar filters={filters} setFilters={setFilters} />
       {/* Contact List */}
       {loading ? (
         <div style={{ padding: 32 }}>Loading...</div>

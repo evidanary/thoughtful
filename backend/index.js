@@ -108,9 +108,19 @@ app.get("/contacts", (req, res) => {
       ORDER BY last_activity_date DESC
     `;
 
+    // Get contacts with note and activity info
     const contacts = db.prepare(query).all(params);
 
-    res.json(contacts);
+    // For each contact, fetch tags and add as an array
+    const contactsWithTags = contacts.map((contact) => {
+      const tags = db
+        .prepare("SELECT name FROM tags WHERE contact_id = ?")
+        .all(contact.id)
+        .map((t) => t.name);
+      return { ...contact, tags };
+    });
+
+    res.json(contactsWithTags);
   } catch (error) {
     console.error("Error fetching contacts:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -119,47 +129,51 @@ app.get("/contacts", (req, res) => {
 
 app.get("/contacts/:id", (req, res) => {
   const contactId = parseInt(req.params.id);
-  console.log("Looking for contact with ID:", contactId, "Type:", typeof contactId);
-  
+  console.log(
+    "Looking for contact with ID:",
+    contactId,
+    "Type:",
+    typeof contactId
+  );
+
   const contact = db
     .prepare("SELECT * FROM contacts WHERE id = ?")
     .get(contactId);
   console.log("Contact found:", contact);
-  
+
   const tags = db
     .prepare("SELECT name FROM tags WHERE contact_id = ?")
     .all(contactId);
   console.log("Tags found:", tags);
-  
+
   const notes = db
     .prepare(
       "SELECT * FROM notes WHERE contact_id = ? ORDER BY created_at DESC"
     )
     .all(contactId);
   console.log("Notes found:", notes);
-  
+
   const result = { ...contact, tags: tags.map((t) => t.name), notes };
   console.log("Final result:", result);
-  
+
   res.json(result);
 });
 
 app.post("/contacts/:id/note", (req, res) => {
   const contactId = parseInt(req.params.id);
   const { content } = req.body;
-  const result = db.prepare(
-    "INSERT INTO notes (contact_id, content) VALUES (?, ?)"
-  ).run(contactId, content);
+  const result = db
+    .prepare("INSERT INTO notes (contact_id, content) VALUES (?, ?)")
+    .run(contactId, content);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
 app.post("/contacts/:id/tag", (req, res) => {
   const contactId = parseInt(req.params.id);
   const { name } = req.body;
-  const result = db.prepare("INSERT INTO tags (contact_id, name) VALUES (?, ?)").run(
-    contactId,
-    name
-  );
+  const result = db
+    .prepare("INSERT INTO tags (contact_id, name) VALUES (?, ?)")
+    .run(contactId, name);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
@@ -290,5 +304,35 @@ app.delete("/contacts/:contactId/notes/:noteId", (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Get all views
+app.get("/views", (req, res) => {
+  try {
+    const views = db.prepare("SELECT * FROM views ORDER BY id ASC").all();
+    // Parse filter_json for each view
+    const parsedViews = views.map((view) => ({
+      ...view,
+      filter: JSON.parse(view.filter_json),
+    }));
+    res.json(parsedViews);
+  } catch (error) {
+    console.error("Error fetching views:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/tags", (req, res) => {
+  try {
+    const tags = db
+      .prepare("SELECT DISTINCT name FROM tags ORDER BY name COLLATE NOCASE")
+      .all();
+    // Return as a flat array of tag names
+    res.json(tags.map((t) => t.name));
+  } catch (error) {
+    console.error("Error fetching tags:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));

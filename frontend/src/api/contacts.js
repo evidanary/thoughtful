@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = "http://localhost:3001";
+export const API = "http://localhost:3001";
 
 export const getContact = async (id) => {
   const res = await axios.get(`${API}/contacts/${id}`);
