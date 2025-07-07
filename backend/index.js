@@ -119,4 +119,66 @@ app.delete("/contacts/:contactId/tags/:tagName", (req, res) => {
   }
 });
 
+app.put("/contacts/:contactId/notes/:noteId", (req, res) => {
+  try {
+    const contactId = parseInt(req.params.contactId);
+    const noteId = parseInt(req.params.noteId);
+    const { content } = req.body;
+
+    console.log("Updating note:", noteId, "for contact:", contactId);
+
+    const result = db
+      .prepare(
+        `
+      UPDATE notes 
+      SET content = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND contact_id = ?
+    `
+      )
+      .run(content, noteId, contactId);
+
+    console.log("Update result:", result);
+
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      console.log("No note found:", noteId, "for contact:", contactId);
+      res.status(404).json({ error: "Note not found" });
+    }
+  } catch (error) {
+    console.error("Error updating note:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/contacts/:contactId/notes/:noteId", (req, res) => {
+  try {
+    const contactId = parseInt(req.params.contactId);
+    const noteId = parseInt(req.params.noteId);
+
+    console.log("Deleting note:", noteId, "from contact:", contactId);
+
+    const result = db
+      .prepare(
+        `
+      DELETE FROM notes 
+      WHERE id = ? AND contact_id = ?
+    `
+      )
+      .run(noteId, contactId);
+
+    console.log("Delete result:", result);
+
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      console.log("No note found:", noteId, "for contact:", contactId);
+      res.status(404).json({ error: "Note not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));

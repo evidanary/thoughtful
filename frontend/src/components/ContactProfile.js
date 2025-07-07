@@ -5,8 +5,32 @@ import {
   addTag,
   updateContact,
   deleteTag,
+  updateNote,
+  deleteNote,
 } from "../api/contacts";
 import NoteItem from "./NoteItem";
+
+// Utility to get query param
+function getQueryParam(name) {
+  return new URLSearchParams(window.location.search).get(name) || "";
+}
+
+// Utility to highlight all occurrences of a substring (case-insensitive, multi-word)
+function highlightText(text, highlight) {
+  if (!highlight) return text;
+  const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = String(text).split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark key={i} style={{ background: "#FFFF66", padding: 0 }}>
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
 
 const ContactProfile = ({ contactId }) => {
   const [contact, setContact] = useState(null);
@@ -14,6 +38,7 @@ const ContactProfile = ({ contactId }) => {
   const [newTag, setNewTag] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const highlight = getQueryParam("highlight");
 
   useEffect(() => {
     getContact(contactId).then(setContact);
@@ -44,6 +69,26 @@ const ContactProfile = ({ contactId }) => {
         error.response?.data?.error || error.message || "Failed to delete tag";
       alert(`Failed to delete tag: ${errorMessage}`);
     }
+  };
+
+  const handleNoteUpdate = async (noteId, content) => {
+    try {
+      console.log("Updating note in ContactProfile:", { noteId, content });
+      await updateNote(contactId, noteId, content);
+      const updated = await getContact(contactId);
+      setContact(updated);
+    } catch (error) {
+      console.error("Error updating note in ContactProfile:", error);
+      const errorMessage =
+        error.response?.data?.error || error.message || "Failed to update note";
+      throw new Error(errorMessage);
+    }
+  };
+
+  const handleNoteDelete = async (noteId) => {
+    await deleteNote(contactId, noteId);
+    const updated = await getContact(contactId);
+    setContact(updated);
   };
 
   const handleEditClick = () => {
@@ -95,7 +140,7 @@ const ContactProfile = ({ contactId }) => {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <h2>{contact.name}</h2>
+          <h2>{highlightText(contact.name, highlight)}</h2>
           <button
             onClick={handleEditClick}
             style={{
@@ -180,9 +225,9 @@ const ContactProfile = ({ contactId }) => {
           </div>
         ) : (
           <div>
-            <p>Email: {contact.email}</p>
-            <p>LinkedIn: {contact.linkedin}</p>
-            <p>Company: {contact.company}</p>
+            <p>Email: {highlightText(contact.email, highlight)}</p>
+            <p>LinkedIn: {highlightText(contact.linkedin, highlight)}</p>
+            <p>Company: {highlightText(contact.company, highlight)}</p>
           </div>
         )}
 
@@ -200,7 +245,7 @@ const ContactProfile = ({ contactId }) => {
                 gap: "4px",
               }}
             >
-              {tag}
+              {highlightText(tag, highlight)}
               <button
                 onClick={() => handleDeleteTag(tag)}
                 style={{
@@ -228,6 +273,27 @@ const ContactProfile = ({ contactId }) => {
           />
           <button onClick={handleAddTag}>Save</button>
         </div>
+        <div style={{ marginTop: 12 }}>
+          <button
+            style={{
+              background: "#4285F4",
+              color: "white",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: 4,
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "14px",
+            }}
+            onClick={() => {
+              const email = encodeURIComponent(contact.email);
+              const url = `https://mail.google.com/mail/u/0/#search/from:${email}+OR+to:${email}`;
+              window.open(url, "_blank");
+            }}
+          >
+            Search Emails
+          </button>
+        </div>
       </div>
 
       {/* Right panel */}
@@ -254,7 +320,15 @@ const ContactProfile = ({ contactId }) => {
 
         <h3 style={{ marginTop: 24 }}>Interaction History</h3>
         {contact.notes.map((note) => (
-          <NoteItem key={note.id} note={note} />
+          <NoteItem
+            key={note.id}
+            note={note}
+            contactId={contactId}
+            onNoteUpdate={handleNoteUpdate}
+            onNoteDelete={handleNoteDelete}
+            highlight={highlight}
+            highlightText={highlightText}
+          />
         ))}
       </div>
     </div>

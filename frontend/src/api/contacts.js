@@ -30,3 +30,17 @@ export const deleteTag = async (contactId, tagName) => {
   );
   return res.data;
 };
+
+export const updateNote = async (contactId, noteId, content) => {
+  const res = await axios.put(`${API}/contacts/${contactId}/notes/${noteId}`, {
+    content,
+  });
+  return res.data;
+};
+
+export const deleteNote = async (contactId, noteId) => {
+  const res = await axios.delete(
+    `${API}/contacts/${contactId}/notes/${noteId}`
+  );
+  return res.data;
+};
