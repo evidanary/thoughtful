@@ -30,6 +30,19 @@ const ContactList = () => {
   const [views, setViews] = useState([]);
   const [selectedView, setSelectedView] = useState(0);
   const [filters, setFilters] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter contacts based on search query
+  const filteredContacts = contacts.filter((contact) => {
+    if (!searchQuery.trim()) return true;
+
+    const query = searchQuery.toLowerCase();
+    return (
+      contact.name?.toLowerCase().includes(query) ||
+      contact.email?.toLowerCase().includes(query) ||
+      contact.company?.toLowerCase().includes(query)
+    );
+  });
 
   // Fetch views on mount
   useEffect(() => {
@@ -97,16 +110,45 @@ const ContactList = () => {
           </button>
         ))}
       </div>
+
+      {/* Filter Bar */}
       <FilterBar filters={filters} setFilters={setFilters} />
+
+      {/* Search Bar */}
+      <div style={{ marginBottom: 5 }}>
+        <input
+          type="text"
+          placeholder="Search by name, email, or company..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            width: "100%",
+            maxWidth: "450px",
+            padding: "12px 10px",
+            fontSize: "14px",
+            border: "1px solid #ddd",
+            borderRadius: "6px",
+            outline: "none",
+            transition: "border-color 0.2s ease",
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "#3498db";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "#ddd";
+          }}
+        />
+      </div>
+
       {/* Contact List */}
       {loading ? (
         <div style={{ padding: 32 }}>Loading...</div>
       ) : error ? (
         <div style={{ color: "red", padding: 32 }}>{error}</div>
-      ) : contacts.length === 0 ? (
+      ) : filteredContacts.length === 0 ? (
         <div>No contacts found.</div>
       ) : (
-        contacts.map((contact) => (
+        filteredContacts.map((contact) => (
           <ContactProfilePreview key={contact.id} contact={contact} />
         ))
       )}

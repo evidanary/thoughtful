@@ -86,20 +86,55 @@ const ContactProfilePreview = ({ contact }) => {
           >
             {contact.name}
           </Link>
-          {lastUpdatedRelative && (
-            <div
-              style={{
-                fontSize: 13,
-                color: "#888",
-                marginTop: 2,
-                cursor: "pointer",
-                width: "fit-content",
-              }}
-              title={lastUpdatedExact}
-            >
-              {lastUpdatedRelative}
-            </div>
-          )}
+          {/* Last Updated and Contact Info */}
+          <div
+            style={{
+              fontSize: 13,
+              color: "#666",
+              marginTop: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            {lastUpdatedRelative && (
+              <span
+                style={{
+                  color: "#888",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "20px", // Fixed height for consistency
+                }}
+                title={lastUpdatedExact}
+              >
+                {lastUpdatedRelative}
+              </span>
+            )}
+            {contact.company && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "20px", // Fixed height for consistency
+                }}
+              >
+                🏢 {contact.company}
+              </span>
+            )}
+            {contact.email && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "20px", // Fixed height for consistency
+                }}
+              >
+                📧 {contact.email}
+              </span>
+            )}
+          </div>
         </div>
         <div
           style={{
