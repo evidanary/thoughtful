@@ -5,6 +5,8 @@ import ContactProfilePreview from "./ContactProfilePreview";
 import FilterBar from "./FilterBar";
 import SaveViewModal from "./SaveViewModal";
 import { createView } from "../api/views";
+import ActivityFeed from "./ActivityFeed";
+import { getActivity } from "../api/activity";
 
 function buildQueryParams(filter) {
   if (!filter) return "";
@@ -36,6 +38,9 @@ const ContactList = () => {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [viewMode, setViewMode] = useState("preview"); // "preview" or "condensed"
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState(null);
 
   // Filter contacts based on search query
   const filteredContacts = contacts.filter((contact) => {
@@ -124,6 +129,27 @@ const ContactList = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  const fetchActivity = async () => {
+    setActivityLoading(true);
+    setActivityError(null);
+    try {
+      const viewFilter = views[selectedView]?.filter || {};
+      const mergedFilter = { ...viewFilter, ...filters };
+      const query = buildQueryParams(mergedFilter);
+      const data = await getActivity(query);
+      setActivities(data);
+    } catch (err) {
+      setActivityError("Failed to load activity");
+    }
+    setActivityLoading(false);
+  };
+
+  useEffect(() => {
+    if (viewMode === "activity" && views.length > 0) {
+      fetchActivity();
+    }
+  }, [selectedView, views, filters, viewMode]);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 0" }}>
@@ -262,6 +288,26 @@ const ContactList = () => {
           >
             📝
           </button>
+          <button
+            onClick={() => setViewMode("activity")}
+            style={{
+              padding: "6px 12px",
+              border: "none",
+              borderLeft: "1px solid #ddd",
+              background: viewMode === "activity" ? "#666" : "#f5f5f5",
+              color: viewMode === "activity" ? "#fff" : "#666",
+              fontWeight: 500,
+              fontSize: 12,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            title="Activity feed"
+          >
+            📊
+          </button>
         </div>
 
         {/* More Actions Dropdown */}
@@ -324,7 +370,7 @@ const ContactList = () => {
                 onMouseOver={(e) => (e.target.style.background = "#f5f5f5")}
                 onMouseOut={(e) => (e.target.style.background = "none")}
               >
-                📊 Export to CSV
+                Export to CSV
               </button>
             </div>
           )}
@@ -339,21 +385,32 @@ const ContactList = () => {
         />
       )}
 
-      {/* Contact List */}
-      {loading ? (
-        <div style={{ padding: 32 }}>Loading...</div>
-      ) : error ? (
-        <div style={{ color: "red", padding: 32 }}>{error}</div>
-      ) : filteredContacts.length === 0 ? (
-        <div>No contacts found.</div>
+      {/* Content */}
+      {viewMode === "activity" ? (
+        <ActivityFeed
+          activities={activities}
+          loading={activityLoading}
+          error={activityError}
+        />
       ) : (
-        filteredContacts.map((contact) => (
-          <ContactProfilePreview
-            key={contact.id}
-            contact={contact}
-            condensed={viewMode === "condensed"}
-          />
-        ))
+        <>
+          {/* Contact List */}
+          {loading ? (
+            <div style={{ padding: 32 }}>Loading...</div>
+          ) : error ? (
+            <div style={{ color: "red", padding: 32 }}>{error}</div>
+          ) : filteredContacts.length === 0 ? (
+            <div>No contacts found.</div>
+          ) : (
+            filteredContacts.map((contact) => (
+              <ContactProfilePreview
+                key={contact.id}
+                contact={contact}
+                condensed={viewMode === "condensed"}
+              />
+            ))
+          )}
+        </>
       )}
     </div>
   );

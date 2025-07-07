@@ -362,5 +362,65 @@ app.get("/tags", (req, res) => {
   }
 });
 
+app.get("/activity", (req, res) => {
+  try {
+    // Parse filters from query parameters (same as /contacts)
+    const {
+      tags,
+      created_after,
+      created_before,
+      last_activity_after,
+      last_activity_before,
+    } = req.query;
+
+    // Build WHERE clauses for contacts that match the filters
+    let contactWhereClauses = [];
+    let params = {};
+
+    if (tags) {
+      const tagList = tags.split(",").map((t) => t.trim());
+      contactWhereClauses.push(`
+        c.id IN (
+          SELECT contact_id FROM tags WHERE name IN (${tagList
+            .map((_, i) => `@tag${i}`)
+            .join(",")})
+        )
+      `);
+      tagList.forEach((tag, i) => (params[`tag${i}`] = tag));
+    }
+
+    if (created_after) {
+      contactWhereClauses.push("c.created_at >= @created_after");
+      params.created_after = created_after;
+    }
+    if (created_before) {
+      contactWhereClauses.push("c.created_at <= @created_before");
+      params.created_before = created_before;
+    }
+
+    // Get activity for contacts that match the filters
+    const query = `
+      SELECT 
+        a.*,
+        c.name as contact_name,
+        c.id as contact_id
+      FROM activity a
+      INNER JOIN contacts c ON a.contact_id = c.id
+      ${
+        contactWhereClauses.length
+          ? "WHERE " + contactWhereClauses.join(" AND ")
+          : ""
+      }
+      ORDER BY a.created_at DESC
+    `;
+
+    const activities = db.prepare(query).all(params);
+    res.json(activities);
+  } catch (error) {
+    console.error("Error fetching activity:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));
