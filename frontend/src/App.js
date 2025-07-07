@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ContactProfile from "./components/ContactProfile";
+import ContactList from "./components/ContactList";
 import TitleBar from "./components/TitleBar";
 
 function App() {
@@ -13,12 +16,21 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      <TitleBar onSearch={handleSearch} />
-      <div style={{ padding: "20px" }}>
-        <ContactProfile contactId="1" />
-      </div>
+      <Router>
+        <TitleBar onSearch={handleSearch} />
+        <Routes>
+          <Route path="/" element={<ContactList />} />
+          <Route path="/profile/:id" element={<ContactProfileWrapper />} />
+        </Routes>
+      </Router>
     </div>
   );
+}
+
+// Wrapper to extract :id param and pass as contactId
+function ContactProfileWrapper() {
+  const { id } = useParams();
+  return <ContactProfile contactId={id} />;
 }
 
 export default App;

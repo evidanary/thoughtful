@@ -44,3 +44,13 @@ export const deleteNote = async (contactId, noteId) => {
   );
   return res.data;
 };
+
+export const getAllContacts = async () => {
+  const res = await axios.get(`${API}/contacts`);
+  return res.data;
+};
+
+export const addContact = async (contactData) => {
+  const res = await axios.post(`${API}/contacts`, contactData);
+  return res.data;
+};

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import AddContactModal from "./AddContactModal";
+import { Link } from "react-router-dom";
 /**
  *  Brand Gradient Color Meaning:
   - Outlasting the competition: Indigo (#4B0082)
@@ -11,6 +13,7 @@ import { useState } from "react";
 
 const TitleBar = ({ onSearch }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -41,26 +44,35 @@ const TitleBar = ({ onSearch }) => {
     >
       {/* Left side - Brand */}
       <div>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "32px",
-            fontWeight: "bold",
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-            background: "linear-gradient(90deg, #4B0082, #FFB6C1, #00BFFF)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
-        >
-          Thoughtful
-        </h1>
+        <Link to="/" style={{ textDecoration: "none" }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "32px",
+              fontWeight: "bold",
+              fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+              background: "linear-gradient(90deg, #4B0082, #FFB6C1, #00BFFF)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            Thoughtful
+          </h1>
+        </Link>
       </div>
 
-      {/* Right side - Search */}
-      <div style={{ flex: "0 0 300px" }}>
-        <form onSubmit={handleSearchSubmit}>
+      {/* Right side - Search and Add Contact */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          flex: "0 0 400px",
+        }}
+      >
+        <form onSubmit={handleSearchSubmit} style={{ flex: 1 }}>
           <input
             type="text"
             placeholder="Search contacts..."
@@ -83,6 +95,23 @@ const TitleBar = ({ onSearch }) => {
             }}
           />
         </form>
+        <button
+          style={{
+            background: "#4B0082",
+            color: "white",
+            border: "none",
+            borderRadius: 6,
+            padding: "10px 20px",
+            fontWeight: 600,
+            fontSize: 15,
+            cursor: "pointer",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+          }}
+          onClick={() => setShowModal(true)}
+        >
+          Add Contact
+        </button>
+        {showModal && <AddContactModal onClose={() => setShowModal(false)} />}
       </div>
     </div>
   );

@@ -7,6 +7,38 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.post("/contacts", (req, res) => {
+  try {
+    const { name, email, linkedin, company } = req.body;
+    if (!name) return res.status(400).json({ error: "Name is required" });
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const result = db
+      .prepare(
+        "INSERT INTO contacts (name, email, linkedin, company, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .run(name, email, linkedin, company, now, now);
+    const contact = db
+      .prepare("SELECT * FROM contacts WHERE id = ?")
+      .get(result.lastInsertRowid);
+    res.status(201).json(contact);
+  } catch (error) {
+    console.error("Error creating contact:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/contacts", (req, res) => {
+  try {
+    const contacts = db
+      .prepare("SELECT * FROM contacts ORDER BY name COLLATE NOCASE")
+      .all();
+    res.json(contacts);
+  } catch (error) {
+    console.error("Error fetching contacts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/contacts/:id", (req, res) => {
   const contactId = parseInt(req.params.id);
   console.log("Looking for contact with ID:", contactId, "Type:", typeof contactId);

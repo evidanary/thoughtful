@@ -3,13 +3,17 @@ CREATE TABLE IF NOT EXISTS contacts (
     name TEXT NOT NULL,
     email TEXT,
     linkedin TEXT,
-    company TEXT
+    company TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     contact_id INTEGER,
     name TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(contact_id) REFERENCES contacts(id) ON DELETE CASCADE
 );
 
