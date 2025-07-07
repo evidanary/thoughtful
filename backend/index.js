@@ -321,6 +321,34 @@ app.get("/views", (req, res) => {
   }
 });
 
+app.post("/views", (req, res) => {
+  try {
+    const { label, description, filter_json } = req.body;
+    if (!label) return res.status(400).json({ error: "Name is required" });
+    if (!filter_json)
+      return res.status(400).json({ error: "Filter is required" });
+
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const result = db
+      .prepare(
+        "INSERT INTO views (label, description, filter_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+      )
+      .run(label, description, filter_json, now, now);
+
+    const view = db
+      .prepare("SELECT * FROM views WHERE id = ?")
+      .get(result.lastInsertRowid);
+
+    res.status(201).json({
+      ...view,
+      filter: JSON.parse(view.filter_json),
+    });
+  } catch (error) {
+    console.error("Error creating view:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/tags", (req, res) => {
   try {
     const tags = db

@@ -3,6 +3,8 @@ import { getAllContacts } from "../api/contacts";
 import { getAllViews } from "../api/views";
 import ContactProfilePreview from "./ContactProfilePreview";
 import FilterBar from "./FilterBar";
+import SaveViewModal from "./SaveViewModal";
+import { createView } from "../api/views";
 
 function buildQueryParams(filter) {
   if (!filter) return "";
@@ -31,6 +33,7 @@ const ContactList = () => {
   const [selectedView, setSelectedView] = useState(0);
   const [filters, setFilters] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   // Filter contacts based on search query
   const filteredContacts = contacts.filter((contact) => {
@@ -52,6 +55,7 @@ const ContactList = () => {
         setViews(data);
       } catch (err) {
         console.error("Error fetching views:", err);
+        setViews([]);
       }
     }
     fetchViews();
@@ -77,6 +81,13 @@ const ContactList = () => {
       fetchContacts();
     }
   }, [selectedView, views, filters]);
+
+  const handleSaveView = async (viewData) => {
+    const newView = await createView(viewData);
+    // Refresh the views list
+    const updatedViews = await getAllViews();
+    setViews(updatedViews);
+  };
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 0" }}>
@@ -109,6 +120,24 @@ const ContactList = () => {
             {view.label}
           </button>
         ))}
+        <button
+          onClick={() => setShowSaveModal(true)}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 20,
+            border: "none",
+            background: "#333333",
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: 15,
+            cursor: "pointer",
+            marginBottom: 4,
+            minWidth: 40,
+          }}
+          title="Save current filters as a new view"
+        >
+          +
+        </button>
       </div>
 
       {/* Filter Bar */}
@@ -139,6 +168,14 @@ const ContactList = () => {
           }}
         />
       </div>
+
+      {showSaveModal && (
+        <SaveViewModal
+          onClose={() => setShowSaveModal(false)}
+          onSave={handleSaveView}
+          currentFilters={filters}
+        />
+      )}
 
       {/* Contact List */}
       {loading ? (
