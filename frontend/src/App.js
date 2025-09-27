@@ -5,6 +5,7 @@ import ContactProfile from "./components/ContactProfile";
 import ContactList from "./components/ContactList";
 import TitleBar from "./components/TitleBar";
 import Milestones from "./components/Milestones";
+import EmailTemplates from "./components/EmailTemplates";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,6 +24,7 @@ function App() {
           <Route path="/" element={<ContactList />} />
           <Route path="/profile/:id" element={<ContactProfileWrapper />} />
           <Route path="/milestones" element={<Milestones />} />
+          <Route path="/email-templates" element={<EmailTemplates />} />
         </Routes>
       </Router>
     </div>

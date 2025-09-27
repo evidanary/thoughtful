@@ -1,8 +1,21 @@
 const express = require("express");
 const cors = require("cors");
 const Database = require("better-sqlite3");
+const fs = require("fs");
+const path = require("path");
 
 const db = new Database("db.sqlite");
+
+// Initialize database schema
+try {
+  const schemaPath = path.join(__dirname, "schema.sql");
+  const schema = fs.readFileSync(schemaPath, "utf8");
+  db.exec(schema);
+  console.log("Database schema initialized successfully");
+} catch (error) {
+  console.error("Error initializing database schema:", error);
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -422,5 +435,94 @@ app.get("/activity", (req, res) => {
   }
 });
 
+// Email Templates endpoints
+app.get("/email-templates", (req, res) => {
+  try {
+    const templates = db
+      .prepare("SELECT * FROM email_templates ORDER BY created_at DESC")
+      .all();
+    res.json(templates);
+  } catch (error) {
+    console.error("Error fetching email templates:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/email-templates", (req, res) => {
+  try {
+    const { name, subject, body } = req.body;
+    if (!name)
+      return res.status(400).json({ error: "Template name is required" });
+    if (!subject)
+      return res.status(400).json({ error: "Email subject is required" });
+    if (!body) return res.status(400).json({ error: "Email body is required" });
+
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const result = db
+      .prepare(
+        "INSERT INTO email_templates (name, subject, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+      )
+      .run(name, subject, body, now, now);
+
+    const template = db
+      .prepare("SELECT * FROM email_templates WHERE id = ?")
+      .get(result.lastInsertRowid);
+
+    res.status(201).json(template);
+  } catch (error) {
+    console.error("Error creating email template:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.put("/email-templates/:id", (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const { name, subject, body } = req.body;
+
+    if (!name)
+      return res.status(400).json({ error: "Template name is required" });
+    if (!subject)
+      return res.status(400).json({ error: "Email subject is required" });
+    if (!body) return res.status(400).json({ error: "Email body is required" });
+
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const result = db
+      .prepare(
+        "UPDATE email_templates SET name = ?, subject = ?, body = ?, updated_at = ? WHERE id = ?"
+      )
+      .run(name, subject, body, now, templateId);
+
+    if (result.changes > 0) {
+      const template = db
+        .prepare("SELECT * FROM email_templates WHERE id = ?")
+        .get(templateId);
+      res.json(template);
+    } else {
+      res.status(404).json({ error: "Template not found" });
+    }
+  } catch (error) {
+    console.error("Error updating email template:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/email-templates/:id", (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const result = db
+      .prepare("DELETE FROM email_templates WHERE id = ?")
+      .run(templateId);
+
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: "Template not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting email template:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));

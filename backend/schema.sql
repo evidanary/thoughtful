@@ -45,6 +45,15 @@ CREATE TABLE IF NOT EXISTS activity (
     FOREIGN KEY(contact_id) REFERENCES contacts(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS email_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Trigger for contact creation
 CREATE TRIGGER IF NOT EXISTS track_contact_added
 AFTER INSERT ON contacts
