@@ -36,3 +36,37 @@
     transform: rotate(360deg);
   }
 }
+
+/* Custom styles for the milestones timeline */
+.milestone-timeline {
+  position: relative;
+}
+
+.milestone-timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #e0e0e0;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+/* Responsive adjustments for milestones */
+@media (max-width: 768px) {
+  .milestone-timeline::before {
+    left: 30px;
+  }
+  
+  .milestone-content {
+    margin-left: 60px !important;
+    padding-right: 20px !important;
+  }
+  
+  .milestone-date {
+    margin-right: 60px !important;
+    padding-left: 20px !important;
+  }
+}

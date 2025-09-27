@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ContactProfile from "./components/ContactProfile";
 import ContactList from "./components/ContactList";
 import TitleBar from "./components/TitleBar";
+import Milestones from "./components/Milestones";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,6 +22,7 @@ function App() {
         <Routes>
           <Route path="/" element={<ContactList />} />
           <Route path="/profile/:id" element={<ContactProfileWrapper />} />
+          <Route path="/milestones" element={<Milestones />} />
         </Routes>
       </Router>
     </div>

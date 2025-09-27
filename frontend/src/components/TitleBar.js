@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import AddContactModal from "./AddContactModal";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 /**
  *  Brand Gradient Color Meaning:
   - Outlasting the competition: Indigo (#4B0082)
@@ -14,6 +14,9 @@ import { Link } from "react-router-dom";
 const TitleBar = ({ onSearch }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const navigate = useNavigate();
+  const menuRef = useRef(null);
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -29,6 +32,32 @@ const TitleBar = ({ onSearch }) => {
       onSearch(searchQuery);
     }
   };
+
+  const handleMenuToggle = () => {
+    setShowMenu(!showMenu);
+  };
+
+  const handleMenuItemClick = (path) => {
+    setShowMenu(false);
+    navigate(path);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
 
   return (
     <div
@@ -63,13 +92,13 @@ const TitleBar = ({ onSearch }) => {
         </Link>
       </div>
 
-      {/* Right side - Search and Add Contact */}
+      {/* Right side - Search, Add Contact, and Hamburger Menu */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 16,
-          flex: "0 0 400px",
+          flex: "0 0 500px",
         }}
       >
         <form onSubmit={handleSearchSubmit} style={{ flex: 1 }}>
@@ -111,6 +140,99 @@ const TitleBar = ({ onSearch }) => {
         >
           Add Contact
         </button>
+
+        {/* Hamburger Menu Button */}
+        <div style={{ position: "relative" }} ref={menuRef}>
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "8px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+            onClick={handleMenuToggle}
+          >
+            <div
+              style={{
+                width: "24px",
+                height: "3px",
+                backgroundColor: "#4B0082",
+                borderRadius: "2px",
+                transition: "transform 0.3s ease",
+                transform: showMenu
+                  ? "rotate(45deg) translate(5px, 5px)"
+                  : "none",
+              }}
+            />
+            <div
+              style={{
+                width: "24px",
+                height: "3px",
+                backgroundColor: "#4B0082",
+                borderRadius: "2px",
+                transition: "opacity 0.3s ease",
+                opacity: showMenu ? 0 : 1,
+              }}
+            />
+            <div
+              style={{
+                width: "24px",
+                height: "3px",
+                backgroundColor: "#4B0082",
+                borderRadius: "2px",
+                transition: "transform 0.3s ease",
+                transform: showMenu
+                  ? "rotate(-45deg) translate(7px, -6px)"
+                  : "none",
+              }}
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {showMenu && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                backgroundColor: "white",
+                border: "1px solid #e0e0e0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                minWidth: "200px",
+                zIndex: 1000,
+                marginTop: "8px",
+              }}
+            >
+              <div
+                style={{
+                  padding: "12px 16px",
+                  cursor: "pointer",
+                  borderBottom: "1px solid #f0f0f0",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f8f9fa";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "white";
+                }}
+                onClick={() => handleMenuItemClick("/milestones")}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span style={{ fontSize: "16px" }}>🏆</span>
+                  <span style={{ fontWeight: 500 }}>Milestones</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {showModal && <AddContactModal onClose={() => setShowModal(false)} />}
       </div>
     </div>
