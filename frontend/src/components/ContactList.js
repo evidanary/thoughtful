@@ -36,7 +36,7 @@ const ContactList = () => {
   const [filters, setFilters] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [viewMode, setViewMode] = useState("preview"); // "preview" or "condensed"
+  const [viewMode, setViewMode] = useState("condensed"); // "preview" or "condensed"
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -250,25 +250,6 @@ const ContactList = () => {
           }}
         >
           <button
-            onClick={() => setViewMode("preview")}
-            style={{
-              padding: "6px 12px",
-              border: "none",
-              background: viewMode === "preview" ? "#666" : "#f5f5f5",
-              color: viewMode === "preview" ? "#fff" : "#666",
-              fontWeight: 500,
-              fontSize: 12,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-            title="Detailed view"
-          >
-            📋
-          </button>
-          <button
             onClick={() => setViewMode("condensed")}
             style={{
               padding: "6px 12px",
@@ -287,6 +268,25 @@ const ContactList = () => {
             title="Compact view"
           >
             📝
+          </button>
+          <button
+            onClick={() => setViewMode("preview")}
+            style={{
+              padding: "6px 12px",
+              border: "none",
+              background: viewMode === "preview" ? "#666" : "#f5f5f5",
+              color: viewMode === "preview" ? "#fff" : "#666",
+              fontWeight: 500,
+              fontSize: 12,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            title="Detailed view"
+          >
+            📋
           </button>
           <button
             onClick={() => setViewMode("activity")}
