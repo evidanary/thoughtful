@@ -7,6 +7,7 @@ import SaveViewModal from "./SaveViewModal";
 import { createView } from "../api/views";
 import ActivityFeed from "./ActivityFeed";
 import { getActivity } from "../api/activity";
+import BulkEmailModal from "./BulkEmailModal";
 
 function buildQueryParams(filter) {
   if (!filter) return "";
@@ -41,6 +42,20 @@ const ContactList = () => {
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState(null);
+  const [selectedContacts, setSelectedContacts] = useState(new Set());
+  const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
+
+  // Handle individual contact selection
+  const handleContactSelect = (contactId, isSelected) => {
+    const newSelected = new Set(selectedContacts);
+    if (isSelected) {
+      newSelected.add(contactId);
+    } else {
+      newSelected.delete(contactId);
+    }
+    setSelectedContacts(newSelected);
+  };
 
   // Filter contacts based on search query
   const filteredContacts = contacts.filter((contact) => {
@@ -53,6 +68,32 @@ const ContactList = () => {
       contact.company?.toLowerCase().includes(query)
     );
   });
+
+  // Handle select all checkbox
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      const allContactIds = new Set(
+        filteredContacts.map((contact) => contact.id)
+      );
+      setSelectedContacts(allContactIds);
+    } else {
+      setSelectedContacts(new Set());
+    }
+  };
+
+  // Check if all contacts are selected
+  const isAllSelected =
+    filteredContacts.length > 0 &&
+    filteredContacts.every((contact) => selectedContacts.has(contact.id));
+  const isIndeterminate = selectedContacts.size > 0 && !isAllSelected;
+
+  // Set up global function for TitleBar to call
+  useEffect(() => {
+    window.showBulkEmailModal = () => setShowBulkEmailModal(true);
+    return () => {
+      delete window.showBulkEmailModal;
+    };
+  }, []);
 
   // Fetch views on mount
   useEffect(() => {
@@ -394,6 +435,69 @@ const ContactList = () => {
         />
       ) : (
         <>
+          {/* Select All Controls - only show in condensed view */}
+          {viewMode === "condensed" && filteredContacts.length > 0 && (
+            <div
+              style={{
+                padding: "12px 0",
+                borderBottom: "1px solid #eee",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                backgroundColor: "#f8f9fa",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = isIndeterminate;
+                }}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  cursor: "pointer",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "14px",
+                  color: "#666",
+                  fontWeight: "500",
+                }}
+              >
+                {selectedContacts.size > 0
+                  ? `${selectedContacts.size} of ${filteredContacts.length} selected`
+                  : "Select all"}
+              </span>
+              {selectedContacts.size > 0 && (
+                <button
+                  onClick={() => {
+                    const ids = Array.from(selectedContacts).join(",");
+                    navigator.clipboard.writeText(ids);
+                    setShowCopySuccess(true);
+                    setTimeout(() => setShowCopySuccess(false), 5000);
+                  }}
+                  style={{
+                    backgroundColor: showCopySuccess ? "#28a745" : "#4B0082",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    marginLeft: "auto",
+                    transition: "background-color 0.3s ease",
+                  }}
+                >
+                  {showCopySuccess ? "✓ Copied!" : "Copy Selected"}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Contact List */}
           {loading ? (
             <div style={{ padding: 32 }}>Loading...</div>
@@ -407,10 +511,20 @@ const ContactList = () => {
                 key={contact.id}
                 contact={contact}
                 condensed={viewMode === "condensed"}
+                showCheckbox={viewMode === "condensed"}
+                isSelected={selectedContacts.has(contact.id)}
+                onSelect={(isSelected) =>
+                  handleContactSelect(contact.id, isSelected)
+                }
               />
             ))
           )}
         </>
+      )}
+
+      {/* Bulk Email Modal */}
+      {showBulkEmailModal && (
+        <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />
       )}
     </div>
   );

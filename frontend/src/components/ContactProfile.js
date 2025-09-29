@@ -7,8 +7,10 @@ import {
   deleteTag,
   updateNote,
   deleteNote,
+  deleteContact,
 } from "../api/contacts";
 import NoteItem from "./NoteItem";
+import { useNavigate } from "react-router-dom";
 
 // Utility to get query param
 function getQueryParam(name) {
@@ -38,11 +40,30 @@ const ContactProfile = ({ contactId }) => {
   const [newTag, setNewTag] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const highlight = getQueryParam("highlight");
+  const navigate = useNavigate();
 
   useEffect(() => {
     getContact(contactId).then(setContact);
   }, [contactId]);
+
+  // Close delete menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDeleteMenu && !event.target.closest("[data-delete-menu]")) {
+        setShowDeleteMenu(false);
+      }
+    };
+
+    if (showDeleteMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDeleteMenu]);
 
   const handleAddNote = async () => {
     await addNote(contactId, newNote);
@@ -116,6 +137,31 @@ const ContactProfile = ({ contactId }) => {
         "Failed to update contact";
       alert(`Failed to update contact: ${errorMessage}`);
     }
+  };
+
+  const handleDeleteContact = async () => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${contact.name}"? This action cannot be undone and will also delete all associated notes and tags.`
+    );
+
+    if (confirmDelete) {
+      try {
+        console.log("Attempting to delete contact with ID:", contactId);
+        await deleteContact(contactId);
+        // Navigate back to the contact list
+        navigate("/");
+      } catch (error) {
+        console.error("Error deleting contact:", error);
+        console.error("Full error object:", error);
+        console.error("Error response:", error.response);
+        const errorMessage =
+          error.response?.data?.error ||
+          error.message ||
+          "Failed to delete contact";
+        alert(`Failed to delete contact: ${errorMessage}`);
+      }
+    }
+    setShowDeleteMenu(false);
   };
 
   const handleCancelEdit = () => {
@@ -293,6 +339,76 @@ const ContactProfile = ({ contactId }) => {
           >
             Search Emails
           </button>
+        </div>
+
+        {/* Three-dot menu */}
+        <div style={{ marginTop: 8, position: "relative" }} data-delete-menu>
+          <button
+            onClick={() => setShowDeleteMenu(!showDeleteMenu)}
+            style={{
+              background: "transparent",
+              border: "1px solid #ddd",
+              borderRadius: 4,
+              padding: "6px 8px",
+              cursor: "pointer",
+              fontSize: "16px",
+              color: "#666",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#f8f9fa";
+              e.target.style.borderColor = "#999";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.borderColor = "#ddd";
+            }}
+            title="More actions"
+          >
+            ⋯
+          </button>
+
+          {/* Dropdown menu */}
+          {showDeleteMenu && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                backgroundColor: "white",
+                border: "1px solid #ddd",
+                borderRadius: 6,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                minWidth: "150px",
+                zIndex: 1000,
+                marginTop: 4,
+              }}
+            >
+              <div
+                onClick={handleDeleteContact}
+                style={{
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#dc3545",
+                  fontWeight: 500,
+                  transition: "background-color 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f8f9fa";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "white";
+                }}
+              >
+                <span style={{ fontSize: "16px" }}>🗑️</span>
+                Delete Contact
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

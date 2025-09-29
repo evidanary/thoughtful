@@ -226,6 +226,45 @@ app.put("/contacts/:id", (req, res) => {
   }
 });
 
+app.delete("/contacts/:id", (req, res) => {
+  try {
+    const contactId = parseInt(req.params.id);
+
+    console.log("DELETE /contacts/:id - Received request");
+    console.log("Raw ID param:", req.params.id);
+    console.log("Parsed contact ID:", contactId);
+
+    // First, let's check if the contact exists
+    const existingContact = db
+      .prepare("SELECT * FROM contacts WHERE id = ?")
+      .get(contactId);
+
+    console.log("Existing contact:", existingContact);
+
+    if (!existingContact) {
+      console.log("Contact not found in database");
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    const result = db
+      .prepare("DELETE FROM contacts WHERE id = ?")
+      .run(contactId);
+
+    console.log("Delete result:", result);
+
+    if (result.changes > 0) {
+      console.log("Contact deleted successfully");
+      res.json({ success: true });
+    } else {
+      console.log("No contact found with ID:", contactId);
+      res.status(404).json({ error: "Contact not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting contact:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.delete("/contacts/:contactId/tags/:tagName", (req, res) => {
   try {
     const contactId = parseInt(req.params.contactId);

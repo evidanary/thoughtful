@@ -54,3 +54,11 @@ export const addContact = async (contactData) => {
   const res = await axios.post(`${API}/contacts`, contactData);
   return res.data;
 };
+
+export const deleteContact = async (contactId) => {
+  console.log("deleteContact API call - contactId:", contactId);
+  console.log("deleteContact API call - URL:", `${API}/contacts/${contactId}`);
+  const res = await axios.delete(`${API}/contacts/${contactId}`);
+  console.log("deleteContact API call - response:", res);
+  return res.data;
+};

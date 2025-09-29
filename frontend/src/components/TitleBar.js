@@ -250,6 +250,33 @@ const TitleBar = ({ onSearch }) => {
                   <span style={{ fontWeight: 500 }}>Email Templates</span>
                 </div>
               </div>
+              <div
+                style={{
+                  padding: "12px 16px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f8f9fa";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "white";
+                }}
+                onClick={() => {
+                  setShowMenu(false);
+                  // We'll handle this with a callback since it's a modal, not a route
+                  if (window.showBulkEmailModal) {
+                    window.showBulkEmailModal();
+                  }
+                }}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span style={{ fontSize: "16px" }}>📧</span>
+                  <span style={{ fontWeight: 500 }}>Bulk Email</span>
+                </div>
+              </div>
             </div>
           )}
         </div>

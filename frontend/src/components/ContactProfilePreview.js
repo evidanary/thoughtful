@@ -31,7 +31,13 @@ function getRelativeTime(dateString) {
   return "just now";
 }
 
-const ContactProfilePreview = ({ contact, condensed = false }) => {
+const ContactProfilePreview = ({
+  contact,
+  condensed = false,
+  showCheckbox = false,
+  isSelected = false,
+  onSelect,
+}) => {
   // Use flat note fields from backend
   const mostRecentNote = contact.note_content || "";
   const NOTE_PREVIEW_CHAR_COUNT = 1000;
@@ -64,111 +70,137 @@ const ContactProfilePreview = ({ contact, condensed = false }) => {
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
         }}
       >
-        <div style={{ maxWidth: "60%" }}>
-          <Link
-            to={`/profile/${contact.id}`}
-            style={{
-              fontSize: condensed ? 14 : 22,
-              fontWeight: 600,
-              color: "#4B0082",
-              textDecoration: "none",
-              transition: "color 0.2s",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              display: "block",
-            }}
-            onMouseOver={(e) => (e.target.style.color = "#00BFFF")}
-            onMouseOut={(e) => (e.target.style.color = "#4B0082")}
-          >
-            {contact.name}
-          </Link>
-          {/* Last Updated and Contact Info */}
-          <div
-            style={{
-              fontSize: 13,
-              color: "#666",
-              marginTop: 2,
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            {lastUpdatedRelative && (
-              <span
+        <div style={{ display: "flex", alignItems: "flex-start", flex: 1 }}>
+          {/* Checkbox for condensed view */}
+          {showCheckbox && (
+            <div
+              style={{
+                marginRight: "8px",
+                display: "flex",
+                alignItems: "center",
+                paddingTop: "1px", // Slight adjustment to align with text
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={(e) => onSelect && onSelect(e.target.checked)}
                 style={{
-                  color: "#888",
+                  width: "16px",
+                  height: "16px",
                   cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: "20px", // Fixed height for consistency
                 }}
-                title={lastUpdatedExact}
-              >
-                {lastUpdatedRelative}
-              </span>
-            )}
-            {contact.company && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: "20px",
-                }}
-              >
-                🏢 {contact.company}
-              </span>
-            )}
-            {contact.email && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: "20px",
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  color: "#4B0082",
-                }}
-                onClick={() => {
-                  const email = encodeURIComponent(contact.email);
-                  const url = `https://mail.google.com/mail/u/0/#search/from:${email}+OR+to:${email}`;
-                  window.open(url, "_blank");
-                }}
-                title="Search emails with this contact"
-              >
-                📧 {contact.email}
-              </span>
-            )}
-            {contact.linkedin && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: "20px",
-                }}
-              >
-                <a
-                  href={contact.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              />
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Link
+              to={`/profile/${contact.id}`}
+              style={{
+                fontSize: condensed ? 14 : 22,
+                fontWeight: 600,
+                color: "#4B0082",
+                textDecoration: "none",
+                transition: "color 0.2s",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: "block",
+              }}
+              onMouseOver={(e) => (e.target.style.color = "#00BFFF")}
+              onMouseOut={(e) => (e.target.style.color = "#4B0082")}
+            >
+              {contact.name}
+            </Link>
+            {/* Last Updated and Contact Info */}
+            <div
+              style={{
+                fontSize: 13,
+                color: "#666",
+                marginTop: 2,
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                flexWrap: "wrap",
+              }}
+            >
+              {lastUpdatedRelative && (
+                <span
                   style={{
-                    color: "#0077b5",
-                    textDecoration: "none",
+                    color: "#888",
+                    cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
+                    height: "20px", // Fixed height for consistency
                   }}
-                  title={contact.linkedin}
+                  title={lastUpdatedExact}
                 >
-                  💼 LinkedIn
-                </a>
-              </span>
-            )}
+                  {lastUpdatedRelative}
+                </span>
+              )}
+              {contact.company && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: "20px",
+                  }}
+                >
+                  🏢 {contact.company}
+                </span>
+              )}
+              {contact.email && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: "20px",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    color: "#4B0082",
+                  }}
+                  onClick={() => {
+                    const email = encodeURIComponent(contact.email);
+                    const url = `https://mail.google.com/mail/u/0/#search/from:${email}+OR+to:${email}`;
+                    window.open(url, "_blank");
+                  }}
+                  title="Search emails with this contact"
+                >
+                  📧 {contact.email}
+                </span>
+              )}
+              {contact.linkedin && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: "20px",
+                  }}
+                >
+                  <a
+                    href={contact.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#0077b5",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    title={contact.linkedin}
+                  >
+                    💼 LinkedIn
+                  </a>
+                </span>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Tags section on the right */}
         <div
           style={{
             display: "flex",
