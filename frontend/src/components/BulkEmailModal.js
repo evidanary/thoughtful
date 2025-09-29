@@ -174,26 +174,43 @@ const BulkEmailModal = ({ onClose }) => {
 
     // Replace template variables with actual contact data
     const processedSubject = currentEmailData.subject
-      .replace(/\[FIRSTNAME\]/g, selectedContact.name?.split(' ')[0] || selectedContact.name || '')
-      .replace(/\[COMPANY\]/g, selectedContact.company || '')
-      .replace(/\[TOPIC\]/g, '')
-      .replace(/\[SENDER\]/g, '');
+      .replace(
+        /\[FIRSTNAME\]/g,
+        selectedContact.name?.split(" ")[0] || selectedContact.name || ""
+      )
+      .replace(/\[COMPANY\]/g, selectedContact.company || "")
+      .replace(/\[TOPIC\]/g, "")
+      .replace(/\[SENDER\]/g, "");
 
     const processedBody = currentEmailData.body
-      .replace(/\[FIRSTNAME\]/g, selectedContact.name?.split(' ')[0] || selectedContact.name || '')
-      .replace(/\[COMPANY\]/g, selectedContact.company || '')
-      .replace(/\[TOPIC\]/g, '')
-      .replace(/\[SENDER\]/g, '');
+      .replace(
+        /\[FIRSTNAME\]/g,
+        selectedContact.name?.split(" ")[0] || selectedContact.name || ""
+      )
+      .replace(/\[COMPANY\]/g, selectedContact.company || "")
+      .replace(/\[TOPIC\]/g, "")
+      .replace(/\[SENDER\]/g, "");
 
-    // Create mailto URL
-    const mailtoUrl = `mailto:${encodeURIComponent(selectedContact.email)}?subject=${encodeURIComponent(processedSubject)}&body=${encodeURIComponent(processedBody)}`;
+    // Define the base URL for Gmail's compose window
+    const gmailBaseUrl = "https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1";
 
-    // Open default email client
-    window.location.href = mailtoUrl;
+    // URL encode your dynamic data
+    const recipientEmail = encodeURIComponent(selectedContact.email);
+    const subject = encodeURIComponent(processedSubject);
+    const body = encodeURIComponent(processedBody);
+
+    // Create the complete Gmail URL
+    // Note: We use '&to=', '&su=', and '&body='
+    const gmailUrl = `${gmailBaseUrl}&to=${recipientEmail}&su=${subject}&body=${body}`;
+
+    // Open the URL in a new browser tab
+    window.open(gmailUrl, "_blank");
 
     // TODO: Add activity tracking when backend endpoint is available
     // For now, we'll just log it
-    console.log(`Email generated for contact ${selectedContact.name} (${selectedContact.email})`);
+    console.log(
+      `Email generated for contact ${selectedContact.name} (${selectedContact.email})`
+    );
   };
 
   return (
