@@ -7,7 +7,6 @@ import SaveViewModal from "./SaveViewModal";
 import { createView } from "../api/views";
 import ActivityFeed from "./ActivityFeed";
 import { getActivity } from "../api/activity";
-import BulkEmailModal from "./BulkEmailModal";
 
 function buildQueryParams(filter) {
   if (!filter) return "";
@@ -43,7 +42,6 @@ const ContactList = () => {
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState(null);
   const [selectedContacts, setSelectedContacts] = useState(new Set());
-  const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
   // Handle individual contact selection
@@ -88,12 +86,6 @@ const ContactList = () => {
   const isIndeterminate = selectedContacts.size > 0 && !isAllSelected;
 
   // Set up global function for TitleBar to call
-  useEffect(() => {
-    window.showBulkEmailModal = () => setShowBulkEmailModal(true);
-    return () => {
-      delete window.showBulkEmailModal;
-    };
-  }, []);
 
   // Fetch views on mount
   useEffect(() => {
@@ -520,11 +512,6 @@ const ContactList = () => {
             ))
           )}
         </>
-      )}
-
-      {/* Bulk Email Modal */}
-      {showBulkEmailModal && (
-        <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />
       )}
     </div>
   );

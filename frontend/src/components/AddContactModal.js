@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { addContact } from "../api/contacts";
 
 const modalStyle = {
@@ -24,6 +25,7 @@ const boxStyle = {
 };
 
 const AddContactModal = ({ onClose }) => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -46,10 +48,11 @@ const AddContactModal = ({ onClose }) => {
     }
     setLoading(true);
     try {
-      await addContact(form);
+      const newContact = await addContact(form);
       setLoading(false);
       onClose();
-      window.location.reload(); // reload to show new contact
+      // Navigate to the new contact's profile page
+      navigate(`/profile/${newContact.id}`);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to add contact");
       setLoading(false);

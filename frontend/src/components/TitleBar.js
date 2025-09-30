@@ -11,7 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
     Clear, practical, and open — blue is universally associated with utility, trust, and reliability.
  */
 
-const TitleBar = ({ onSearch }) => {
+const TitleBar = ({ onSearch, onShowBulkEmail }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -264,9 +264,8 @@ const TitleBar = ({ onSearch }) => {
                 }}
                 onClick={() => {
                   setShowMenu(false);
-                  // We'll handle this with a callback since it's a modal, not a route
-                  if (window.showBulkEmailModal) {
-                    window.showBulkEmailModal();
+                  if (onShowBulkEmail) {
+                    onShowBulkEmail();
                   }
                 }}
               >
