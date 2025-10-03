@@ -6,6 +6,7 @@ import ContactList from "./components/ContactList";
 import TitleBar from "./components/TitleBar";
 import Milestones from "./components/Milestones";
 import EmailTemplates from "./components/EmailTemplates";
+import ActionItems from "./components/ActionItems";
 import BulkEmailModal from "./components/BulkEmailModal";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/profile/:id" element={<ContactProfileWrapper />} />
           <Route path="/milestones" element={<Milestones />} />
           <Route path="/email-templates" element={<EmailTemplates />} />
+          <Route path="/action-items" element={<ActionItems />} />
         </Routes>
         {showBulkEmailModal && (
           <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />

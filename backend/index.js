@@ -357,6 +357,32 @@ app.delete("/contacts/:contactId/notes/:noteId", (req, res) => {
   }
 });
 
+// Get all action items from notes containing "@action"
+app.get("/action-items", (req, res) => {
+  try {
+    const actionItems = db.prepare(`
+      SELECT 
+        n.id as note_id,
+        n.content,
+        n.created_at as note_created_at,
+        n.updated_at as note_updated_at,
+        c.id as contact_id,
+        c.name as contact_name,
+        c.email as contact_email,
+        c.company as contact_company
+      FROM notes n
+      JOIN contacts c ON n.contact_id = c.id
+      WHERE n.content LIKE '%@action%'
+      ORDER BY n.updated_at DESC
+    `).all();
+    
+    res.json(actionItems);
+  } catch (error) {
+    console.error("Error fetching action items:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Get all views
 app.get("/views", (req, res) => {
   try {

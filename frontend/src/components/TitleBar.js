@@ -262,6 +262,27 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
                 onMouseLeave={(e) => {
                   e.target.style.backgroundColor = "white";
                 }}
+                onClick={() => handleMenuItemClick("/action-items")}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span style={{ fontSize: "16px" }}>⚡</span>
+                  <span style={{ fontWeight: 500 }}>Action Items</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "12px 16px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f8f9fa";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "white";
+                }}
                 onClick={() => {
                   setShowMenu(false);
                   if (onShowBulkEmail) {
