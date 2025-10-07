@@ -13,13 +13,13 @@ const ActionItems = () => {
       try {
         setLoading(true);
         const items = await getAllActionItems();
-        
+
         // Group by contact and sort by most recent note date
         const groupedItems = groupActionItemsByContact(items);
         setActionItems(groupedItems);
       } catch (err) {
-        console.error('Error fetching action items:', err);
-        setError('Failed to load action items');
+        console.error("Error fetching action items:", err);
+        setError("Failed to load action items");
       } finally {
         setLoading(false);
       }
@@ -30,8 +30,8 @@ const ActionItems = () => {
 
   const groupActionItemsByContact = (items) => {
     const grouped = {};
-    
-    items.forEach(item => {
+
+    items.forEach((item) => {
       const contactKey = item.contact_id;
       if (!grouped[contactKey]) {
         grouped[contactKey] = {
@@ -39,20 +39,20 @@ const ActionItems = () => {
             id: item.contact_id,
             name: item.contact_name,
             email: item.contact_email,
-            company: item.contact_company
+            company: item.contact_company,
           },
           actionItems: [],
-          mostRecentNoteDate: item.note_updated_at
+          mostRecentNoteDate: item.note_updated_at,
         };
       }
-      
+
       grouped[contactKey].actionItems.push({
         noteId: item.note_id,
         content: item.content,
         createdAt: item.note_created_at,
-        updatedAt: item.note_updated_at
+        updatedAt: item.note_updated_at,
       });
-      
+
       // Update most recent note date if this note is more recent
       if (item.note_updated_at > grouped[contactKey].mostRecentNoteDate) {
         grouped[contactKey].mostRecentNoteDate = item.note_updated_at;
@@ -60,32 +60,41 @@ const ActionItems = () => {
     });
 
     // Convert to array and sort by most recent interaction (note date)
-    return Object.values(grouped).sort((a, b) => 
-      new Date(b.mostRecentNoteDate) - new Date(a.mostRecentNoteDate)
+    return Object.values(grouped).sort(
+      (a, b) => new Date(b.mostRecentNoteDate) - new Date(a.mostRecentNoteDate)
     );
   };
 
   const extractActionItems = (content) => {
-    // Split content by lines and find lines containing @action
+    // Split content by lines and find lines containing @action or @ask
     const lines = content.split("\n");
-    const actionLines = lines.filter((line) =>
-      line.toLowerCase().includes("@action")
+    const actionLines = lines.filter(
+      (line) =>
+        line.toLowerCase().includes("@action") ||
+        line.toLowerCase().includes("@ask")
     );
 
     return actionLines
       .map((line) => {
+        // Determine the type of action item
+        const isAction = line.toLowerCase().includes("@action");
+        const isAsk = line.toLowerCase().includes("@ask");
+        const type = isAction ? "action" : "ask";
+
         // Check if the action is marked as done
         const isDone = line.toLowerCase().includes("[done]");
 
-        // Remove @action, [DONE], and clean up the text
+        // Remove @action/@ask, [DONE], and clean up the text
         let cleanText = line
           .replace(/@action/gi, "")
+          .replace(/@ask/gi, "")
           .replace(/\[done\]/gi, "")
           .replace(/["""]/g, "")
           .trim();
 
         return {
           text: cleanText,
+          type: type,
           isDone: isDone,
           originalLine: line,
         };
@@ -123,8 +132,8 @@ const ActionItems = () => {
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Yesterday';
+
+    if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
     return date.toLocaleDateString();
@@ -132,16 +141,18 @@ const ActionItems = () => {
 
   if (loading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '16px', color: '#666' }}>Loading action items...</div>
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <div style={{ fontSize: "16px", color: "#666" }}>
+          Loading action items...
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '16px', color: '#c00' }}>{error}</div>
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <div style={{ fontSize: "16px", color: "#c00" }}>{error}</div>
       </div>
     );
   }
@@ -166,8 +177,8 @@ const ActionItems = () => {
             margin: 0,
           }}
         >
-          All @action items from contacts' notes, grouped by contact and sorted
-          by most recent interaction.
+          All @action and @ask items from contacts' notes, grouped by contact
+          and sorted by most recent interaction.
         </p>
       </div>
 
@@ -186,7 +197,7 @@ const ActionItems = () => {
             No Action Items Found
           </h3>
           <p style={{ fontSize: "14px", color: "#888", margin: 0 }}>
-            Add "@action" to your contact notes to see them here.
+            Add "@action" or "@ask" to your contact notes to see them here.
           </p>
         </div>
       ) : (
@@ -274,7 +285,7 @@ const ActionItems = () => {
                         style={{
                           display: "flex",
                           alignItems: "flex-start",
-                          gap: "10px",
+                          gap: "8px",
                           padding: "8px 10px",
                           backgroundColor: action.isDone
                             ? "#f0f8f0"
@@ -286,6 +297,27 @@ const ActionItems = () => {
                           opacity: action.isDone ? 0.8 : 1,
                         }}
                       >
+                        {/* Type Pill */}
+                        <div
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: "600",
+                            padding: "2px 6px",
+                            borderRadius: "10px",
+                            backgroundColor:
+                              action.type === "action" ? "#4B0082" : "#0066cc",
+                            color: "white",
+                            textTransform: "uppercase",
+                            minWidth: "40px",
+                            textAlign: "center",
+                            marginTop: "2px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {action.type === "action" ? "DO" : "ASK"}
+                        </div>
+
+                        {/* Status Icon */}
                         <div
                           style={{
                             fontSize: "14px",
@@ -293,6 +325,7 @@ const ActionItems = () => {
                             minWidth: "20px",
                             cursor: action.isDone ? "default" : "pointer",
                             userSelect: "none",
+                            flexShrink: 0,
                           }}
                           onClick={() => {
                             if (!action.isDone) {
@@ -314,6 +347,8 @@ const ActionItems = () => {
                             <span style={{ color: "#ffc107" }}>⏳</span>
                           )}
                         </div>
+
+                        {/* Content */}
                         <div style={{ flex: 1 }}>
                           <div
                             style={{

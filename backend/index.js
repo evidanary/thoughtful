@@ -357,10 +357,12 @@ app.delete("/contacts/:contactId/notes/:noteId", (req, res) => {
   }
 });
 
-// Get all action items from notes containing "@action"
+// Get all action items from notes containing "@action" or "@ask"
 app.get("/action-items", (req, res) => {
   try {
-    const actionItems = db.prepare(`
+    const actionItems = db
+      .prepare(
+        `
       SELECT 
         n.id as note_id,
         n.content,
@@ -372,9 +374,11 @@ app.get("/action-items", (req, res) => {
         c.company as contact_company
       FROM notes n
       JOIN contacts c ON n.contact_id = c.id
-      WHERE n.content LIKE '%@action%'
+      WHERE n.content LIKE '%@action%' OR n.content LIKE '%@ask%'
       ORDER BY n.updated_at DESC
-    `).all();
+    `
+      )
+      .all();
     
     res.json(actionItems);
   } catch (error) {

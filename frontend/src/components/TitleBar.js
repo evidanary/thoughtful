@@ -71,8 +71,8 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
       }}
     >
-      {/* Left side - Brand */}
-      <div>
+      {/* Left side - Brand and Navigation */}
+      <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
         <Link to="/" style={{ textDecoration: "none" }}>
           <h1
             style={{
@@ -90,6 +90,84 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
             Thoughtful
           </h1>
         </Link>
+
+        {/* Navigation Links */}
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          <Link
+            to="/milestones"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: "#4B0082",
+              fontSize: "15px",
+              fontWeight: "500",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#f8f9fa";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>🏆</span>
+            <span>Milestones</span>
+          </Link>
+
+          <Link
+            to="/email-templates"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: "#4B0082",
+              fontSize: "15px",
+              fontWeight: "500",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#f8f9fa";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>✉️</span>
+            <span>Email Templates</span>
+          </Link>
+
+          <Link
+            to="/action-items"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: "#4B0082",
+              fontSize: "15px",
+              fontWeight: "500",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#f8f9fa";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>⚡</span>
+            <span>Action Items</span>
+          </Link>
+        </div>
       </div>
 
       {/* Right side - Search, Add Contact, and Hamburger Menu */}
@@ -207,70 +285,6 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
                 marginTop: "8px",
               }}
             >
-              <div
-                style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #f0f0f0",
-                  transition: "background-color 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#f8f9fa";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "white";
-                }}
-                onClick={() => handleMenuItemClick("/milestones")}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <span style={{ fontSize: "16px" }}>🏆</span>
-                  <span style={{ fontWeight: 500 }}>Milestones</span>
-                </div>
-              </div>
-              <div
-                style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#f8f9fa";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "white";
-                }}
-                onClick={() => handleMenuItemClick("/email-templates")}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <span style={{ fontSize: "16px" }}>✉️</span>
-                  <span style={{ fontWeight: 500 }}>Email Templates</span>
-                </div>
-              </div>
-              <div
-                style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#f8f9fa";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "white";
-                }}
-                onClick={() => handleMenuItemClick("/action-items")}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <span style={{ fontSize: "16px" }}>⚡</span>
-                  <span style={{ fontWeight: 500 }}>Action Items</span>
-                </div>
-              </div>
               <div
                 style={{
                   padding: "12px 16px",
