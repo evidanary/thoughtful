@@ -7,7 +7,7 @@ const Milestones = () => {
       title: "Get Built for Shopify Badge",
       description:
         "Achieve the Built for Shopify badge to establish credibility and trust with potential customers.",
-      date: "In Progress",
+      date: "Complete",
       icon: "🏆",
       color: "#4B0082",
       timeline: [
@@ -18,10 +18,10 @@ const Milestones = () => {
     },
     {
       id: 2,
-      title: "Release Paid Version - $39.99 Plan",
+      title: "Release Paid Version - $12.99 Plan",
       description:
-        "Launch a paid version of the product at $39.99 to offset development and operational costs.",
-      date: "Planned",
+        "Launch a paid version of the product at $12.99 to offset development and operational costs.",
+      date: "In Progress",
       icon: "💰",
       color: "#FFB6C1",
       timeline: [

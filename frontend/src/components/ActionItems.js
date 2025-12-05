@@ -8,24 +8,47 @@ const ActionItems = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchActionItems = async () => {
-      try {
-        setLoading(true);
-        const items = await getAllActionItems();
+  const fetchActionItems = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching action items...");
+      const items = await getAllActionItems();
+      console.log("Raw action items from API:", items);
+      console.log("Number of items received:", items.length);
 
-        // Group by contact and sort by most recent note date
-        const groupedItems = groupActionItemsByContact(items);
-        setActionItems(groupedItems);
-      } catch (err) {
-        console.error("Error fetching action items:", err);
-        setError("Failed to load action items");
-      } finally {
-        setLoading(false);
+      // Group by contact and sort by most recent note date
+      const groupedItems = groupActionItemsByContact(items);
+      console.log("Grouped action items:", groupedItems);
+      setActionItems(groupedItems);
+    } catch (err) {
+      console.error("Error fetching action items:", err);
+      setError("Failed to load action items");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActionItems();
+  }, []);
+
+  // Refresh data when component becomes visible (when user navigates to this page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchActionItems();
       }
     };
 
-    fetchActionItems();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also refresh when window gets focus (user comes back to tab)
+    window.addEventListener('focus', fetchActionItems);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', fetchActionItems);
+    };
   }, []);
 
   const groupActionItemsByContact = (items) => {
@@ -118,9 +141,7 @@ const ActionItems = () => {
       await updateNote(contactId, noteId, updatedContent);
 
       // Refresh the action items
-      const items = await getAllActionItems();
-      const groupedItems = groupActionItemsByContact(items);
-      setActionItems(groupedItems);
+      await fetchActionItems();
     } catch (error) {
       console.error("Error marking action as done:", error);
       // You could add a toast notification here
@@ -159,27 +180,49 @@ const ActionItems = () => {
 
   return (
     <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "20px" }}>
-        <h1
+      <div style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h1
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#333",
+              margin: "0 0 4px 0",
+            }}
+          >
+            Action Items
+          </h1>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "#666",
+              margin: 0,
+            }}
+          >
+            All @action and @ask items from contacts' notes, grouped by contact
+            and sorted by most recent interaction.
+          </p>
+        </div>
+        <button
+          onClick={fetchActionItems}
+          disabled={loading}
           style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            color: "#333",
-            margin: "0 0 4px 0",
-          }}
-        >
-          Action Items
-        </h1>
-        <p
-          style={{
+            backgroundColor: "#4B0082",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "8px 16px",
             fontSize: "14px",
-            color: "#666",
-            margin: 0,
+            fontWeight: "500",
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.7 : 1,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
           }}
         >
-          All @action and @ask items from contacts' notes, grouped by contact
-          and sorted by most recent interaction.
-        </p>
+          {loading ? "🔄" : "↻"} {loading ? "Loading..." : "Refresh"}
+        </button>
       </div>
 
       {actionItems.length === 0 ? (
