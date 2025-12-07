@@ -311,6 +311,36 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
                   <span style={{ fontWeight: 500 }}>Bulk Email</span>
                 </div>
               </div>
+
+              <div
+                style={{
+                  height: "1px",
+                  backgroundColor: "#e0e0e0",
+                  margin: "4px 0",
+                }}
+              />
+
+              <div
+                style={{
+                  padding: "12px 16px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f8f9fa";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "white";
+                }}
+                onClick={() => handleMenuItemClick("/social-media")}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span style={{ fontSize: "16px" }}>📱</span>
+                  <span style={{ fontWeight: 500 }}>Social Media</span>
+                </div>
+              </div>
             </div>
           )}
         </div>

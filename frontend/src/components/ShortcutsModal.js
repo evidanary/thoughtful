@@ -139,37 +139,42 @@ const ShortcutsModal = ({ onClose }) => {
         {/* Keyboard Shortcuts Section */}
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Keyboard Shortcuts</h2>
-          
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Show this help</span>
             <span style={keyStyle}>{modKey} + /</span>
           </div>
-          
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Search contacts</span>
             <span style={keyStyle}>{modKey} + K</span>
           </div>
-          
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Navigate to contacts list</span>
             <span style={keyStyle}>G → H</span>
           </div>
-          
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Navigate to action items</span>
             <span style={keyStyle}>G → A</span>
           </div>
-          
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Navigate to milestones</span>
             <span style={keyStyle}>G → M</span>
           </div>
-          
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Navigate to email templates</span>
             <span style={keyStyle}>G → E</span>
           </div>
-          
+
+          <div style={shortcutRowStyle}>
+            <span style={descriptionStyle}>Navigate to social media</span>
+            <span style={keyStyle}>G → S</span>
+          </div>
+
           <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Close modal / Cancel</span>
             <span style={keyStyle}>Esc</span>
@@ -180,7 +185,8 @@ const ShortcutsModal = ({ onClose }) => {
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Special Keywords in Notes</h2>
           <p style={{ fontSize: 14, color: "#666", marginBottom: 16 }}>
-            Use these special keywords in your contact notes to create trackable action items:
+            Use these special keywords in your contact notes to create trackable
+            action items:
           </p>
 
           <div style={calloutStyle}>
@@ -189,8 +195,9 @@ const ShortcutsModal = ({ onClose }) => {
               <span style={calloutKeywordStyle}>@action</span>
             </div>
             <div style={calloutDescStyle}>
-              Creates an action item that you need to do. These items appear in the Action Items page 
-              with a "DO" label and can be tracked until completion.
+              Creates an action item that you need to do. These items appear in
+              the Action Items page with a "DO" label and can be tracked until
+              completion.
             </div>
             <div style={exampleStyle}>
               Example: @action Follow up with John about the proposal by Friday
@@ -203,11 +210,12 @@ const ShortcutsModal = ({ onClose }) => {
               <span style={calloutKeywordStyle}>@ask</span>
             </div>
             <div style={calloutDescStyle}>
-              Creates an ask item - a question or request you need to follow up on. These appear 
-              in the Action Items page with an "ASK" label.
+              Creates an ask item - a question or request you need to follow up
+              on. These appear in the Action Items page with an "ASK" label.
             </div>
             <div style={exampleStyle}>
-              Example: @ask Does Sarah have availability for a meeting next week?
+              Example: @ask Does Sarah have availability for a meeting next
+              week?
             </div>
           </div>
 
@@ -217,28 +225,39 @@ const ShortcutsModal = ({ onClose }) => {
               <span style={calloutKeywordStyle}>[DONE]</span>
             </div>
             <div style={calloutDescStyle}>
-              Marks an action item or ask as completed. Add this to the end of any line containing 
-              @action or @ask to mark it as done. Done items appear with a strikethrough.
+              Marks an action item or ask as completed. Add this to the end of
+              any line containing @action or @ask to mark it as done. Done items
+              appear with a strikethrough.
             </div>
             <div style={exampleStyle}>
               Example: @action Send meeting notes to team [DONE]
             </div>
           </div>
 
-          <div style={{
-            background: "#f0f7ff",
-            border: "1px solid #b3d9ff",
-            borderRadius: 6,
-            padding: 12,
-            marginTop: 16,
-          }}>
-            <div style={{ fontSize: 13, color: "#0066cc", fontWeight: 600, marginBottom: 6 }}>
+          <div
+            style={{
+              background: "#f0f7ff",
+              border: "1px solid #b3d9ff",
+              borderRadius: 6,
+              padding: 12,
+              marginTop: 16,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 13,
+                color: "#0066cc",
+                fontWeight: 600,
+                marginBottom: 6,
+              }}
+            >
               💡 Pro Tip
             </div>
             <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
-              You can have multiple action items in a single note. Each line containing @action or 
-              @ask will be tracked separately in the Action Items page, grouped by contact and 
-              sorted by most recent interaction.
+              You can have multiple action items in a single note. Each line
+              containing @action or @ask will be tracked separately in the
+              Action Items page, grouped by contact and sorted by most recent
+              interaction.
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ import EmailTemplates from "./components/EmailTemplates";
 import ActionItems from "./components/ActionItems";
 import BulkEmailModal from "./components/BulkEmailModal";
 import ShortcutsModal from "./components/ShortcutsModal";
+import SocialMedia from "./components/SocialMedia";
 
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,17 +34,17 @@ function AppContent() {
 
     const handleKeyDown = (e) => {
       // Ignore if user is typing in an input/textarea
-      const isTyping = ['INPUT', 'TEXTAREA'].includes(e.target.tagName);
+      const isTyping = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
 
       // Cmd+/ or Ctrl+/ - Show shortcuts modal
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
-        setShowShortcutsModal(prev => !prev);
+        setShowShortcutsModal((prev) => !prev);
         return;
       }
 
       // Escape - Close any open modal
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         if (showShortcutsModal) {
           setShowShortcutsModal(false);
         } else if (showBulkEmailModal) {
@@ -56,9 +57,11 @@ function AppContent() {
       if (isTyping) return;
 
       // Cmd+K or Ctrl+K - Focus search
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        const searchInput = document.querySelector('input[placeholder*="Search"]');
+        const searchInput = document.querySelector(
+          'input[placeholder*="Search"]'
+        );
         if (searchInput) {
           searchInput.focus();
           searchInput.select();
@@ -67,7 +70,7 @@ function AppContent() {
       }
 
       // G key navigation - press 'g' then another key
-      if (e.key.toLowerCase() === 'g' && !gPressed) {
+      if (e.key.toLowerCase() === "g" && !gPressed) {
         gPressed = true;
         // Reset after 1 second if no second key is pressed
         gPressTimer = setTimeout(() => {
@@ -82,21 +85,25 @@ function AppContent() {
         gPressed = false;
 
         switch (e.key.toLowerCase()) {
-          case 'h':
+          case "h":
             // Navigate to home/contacts
-            navigate('/');
+            navigate("/");
             break;
-          case 'a':
+          case "a":
             // Navigate to action items
-            navigate('/action-items');
+            navigate("/action-items");
             break;
-          case 'm':
+          case "m":
             // Navigate to milestones
-            navigate('/milestones');
+            navigate("/milestones");
             break;
-          case 'e':
+          case "e":
             // Navigate to email templates
-            navigate('/email-templates');
+            navigate("/email-templates");
+            break;
+          case "s":
+            // Navigate to social media
+            navigate("/social-media");
             break;
           default:
             break;
@@ -104,25 +111,23 @@ function AppContent() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
       if (gPressTimer) clearTimeout(gPressTimer);
     };
   }, [showShortcutsModal, showBulkEmailModal, navigate]);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      <TitleBar
-        onSearch={handleSearch}
-        onShowBulkEmail={handleShowBulkEmail}
-      />
+      <TitleBar onSearch={handleSearch} onShowBulkEmail={handleShowBulkEmail} />
       <Routes>
         <Route path="/" element={<ContactList />} />
         <Route path="/profile/:id" element={<ContactProfileWrapper />} />
         <Route path="/milestones" element={<Milestones />} />
         <Route path="/email-templates" element={<EmailTemplates />} />
         <Route path="/action-items" element={<ActionItems />} />
+        <Route path="/social-media" element={<SocialMedia />} />
       </Routes>
       {showBulkEmailModal && (
         <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />
