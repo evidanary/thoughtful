@@ -11,11 +11,6 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# Database files (keep schema but ignore data)
-*.sqlite
-*.sqlite-journal
-*.db
-
 # Logs
 logs
 *.log
