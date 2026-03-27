@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import AddContactModal from "./AddContactModal";
+import QuickAddModal from "./QuickAddModal";
 import { Link, useNavigate } from "react-router-dom";
 /**
  *  Brand Gradient Color Meaning:
@@ -14,6 +15,7 @@ import { Link, useNavigate } from "react-router-dom";
 const TitleBar = ({ onSearch, onShowBulkEmail }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef(null);
@@ -167,6 +169,31 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
             <span style={{ fontSize: "16px" }}>⚡</span>
             <span>Action Items</span>
           </Link>
+
+          <Link
+            to="/quick-notes"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: "#4B0082",
+              fontSize: "15px",
+              fontWeight: "500",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#f8f9fa";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>📋</span>
+            <span>Inbox</span>
+          </Link>
         </div>
       </div>
 
@@ -202,6 +229,25 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
             }}
           />
         </form>
+        <button
+          style={{
+            background: "#fff",
+            color: "#4B0082",
+            border: "2px solid #4B0082",
+            borderRadius: 6,
+            padding: "9px 16px",
+            fontWeight: 600,
+            fontSize: 15,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+          onClick={() => setShowQuickAdd(true)}
+        >
+          <span style={{ fontSize: 16 }}>⚡</span>
+          Quick Add
+        </button>
         <button
           style={{
             background: "#4B0082",
@@ -346,6 +392,9 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
         </div>
 
         {showModal && <AddContactModal onClose={() => setShowModal(false)} />}
+        {showQuickAdd && (
+          <QuickAddModal onClose={() => setShowQuickAdd(false)} />
+        )}
       </div>
     </div>
   );

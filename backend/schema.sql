@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS email_templates (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS quick_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    contact_id INTEGER,
+    associated_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(contact_id) REFERENCES contacts(id) ON DELETE SET NULL
+);
+
 -- Trigger for contact creation
 CREATE TRIGGER IF NOT EXISTS track_contact_added
 AFTER INSERT ON contacts

@@ -10,6 +10,7 @@ import ActionItems from "./components/ActionItems";
 import BulkEmailModal from "./components/BulkEmailModal";
 import ShortcutsModal from "./components/ShortcutsModal";
 import SocialMedia from "./components/SocialMedia";
+import QuickNotesPage from "./components/QuickNotesPage";
 
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,6 +129,7 @@ function AppContent() {
         <Route path="/email-templates" element={<EmailTemplates />} />
         <Route path="/action-items" element={<ActionItems />} />
         <Route path="/social-media" element={<SocialMedia />} />
+        <Route path="/quick-notes" element={<QuickNotesPage />} />
       </Routes>
       {showBulkEmailModal && (
         <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />

@@ -594,4 +594,78 @@ app.delete("/email-templates/:id", (req, res) => {
   }
 });
 
+// Quick Notes endpoints
+app.get("/quick-notes", (req, res) => {
+  try {
+    const notes = db
+      .prepare(
+        `SELECT qn.*, c.name as contact_name
+         FROM quick_notes qn
+         LEFT JOIN contacts c ON qn.contact_id = c.id
+         ORDER BY qn.created_at DESC`
+      )
+      .all();
+    res.json(notes);
+  } catch (error) {
+    console.error("Error fetching quick notes:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/quick-notes", (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ error: "Content is required" });
+    const result = db
+      .prepare("INSERT INTO quick_notes (content) VALUES (?)")
+      .run(content);
+    const note = db
+      .prepare("SELECT * FROM quick_notes WHERE id = ?")
+      .get(result.lastInsertRowid);
+    res.status(201).json(note);
+  } catch (error) {
+    console.error("Error creating quick note:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.put("/quick-notes/:id/associate", (req, res) => {
+  try {
+    const noteId = parseInt(req.params.id);
+    const { contact_id } = req.body;
+    if (!contact_id) return res.status(400).json({ error: "contact_id is required" });
+
+    const quickNote = db.prepare("SELECT * FROM quick_notes WHERE id = ?").get(noteId);
+    if (!quickNote) return res.status(404).json({ error: "Quick note not found" });
+
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+
+    // Insert as a regular note on the contact
+    db.prepare("INSERT INTO notes (contact_id, content) VALUES (?, ?)").run(contact_id, quickNote.content);
+
+    // Mark quick note as associated
+    db.prepare("UPDATE quick_notes SET contact_id = ?, associated_at = ? WHERE id = ?").run(contact_id, now, noteId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error associating quick note:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/quick-notes/:id", (req, res) => {
+  try {
+    const noteId = parseInt(req.params.id);
+    const result = db.prepare("DELETE FROM quick_notes WHERE id = ?").run(noteId);
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: "Quick note not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting quick note:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));
