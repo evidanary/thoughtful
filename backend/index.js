@@ -187,6 +187,8 @@ app.post("/contacts/:id/tag", (req, res) => {
   const result = db
     .prepare("INSERT INTO tags (contact_id, name) VALUES (?, ?)")
     .run(contactId, name);
+  // Ensure a tag definition exists for this name
+  db.prepare("INSERT OR IGNORE INTO tag_definitions (name) VALUES (?)").run(name);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
@@ -590,6 +592,107 @@ app.delete("/email-templates/:id", (req, res) => {
     }
   } catch (error) {
     console.error("Error deleting email template:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Global Search endpoint
+app.get("/search", (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+    if (!q) return res.json({ contacts: [], notes: [] });
+
+    const term = `%${q.toLowerCase()}%`;
+
+    const contacts = db.prepare(`
+      SELECT id, name, email, company, linkedin, created_at
+      FROM contacts
+      WHERE LOWER(name) LIKE ?
+         OR LOWER(COALESCE(email, '')) LIKE ?
+         OR LOWER(COALESCE(company, '')) LIKE ?
+      ORDER BY name COLLATE NOCASE
+    `).all(term, term, term);
+
+    const notes = db.prepare(`
+      SELECT n.id, n.content, n.created_at, n.contact_id,
+             c.name as contact_name, c.company as contact_company
+      FROM notes n
+      JOIN contacts c ON c.id = n.contact_id
+      WHERE LOWER(n.content) LIKE ?
+      ORDER BY n.created_at DESC
+    `).all(term);
+
+    res.json({ contacts, notes });
+  } catch (error) {
+    console.error("Error performing search:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Tag Definitions endpoints
+app.get("/tag-definitions", (req, res) => {
+  try {
+    const defs = db.prepare(`
+      SELECT td.*, COUNT(t.id) as usage_count
+      FROM tag_definitions td
+      LEFT JOIN tags t ON t.name = td.name
+      GROUP BY td.id
+      ORDER BY td.name COLLATE NOCASE
+    `).all();
+    res.json(defs);
+  } catch (error) {
+    console.error("Error fetching tag definitions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/tag-definitions", (req, res) => {
+  try {
+    const { name, description } = req.body;
+    if (!name) return res.status(400).json({ error: "Name is required" });
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const result = db
+      .prepare("INSERT INTO tag_definitions (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)")
+      .run(name.trim(), description || "", now, now);
+    const def = db.prepare("SELECT * FROM tag_definitions WHERE id = ?").get(result.lastInsertRowid);
+    res.status(201).json(def);
+  } catch (error) {
+    if (error.message.includes("UNIQUE")) {
+      return res.status(409).json({ error: "Tag already exists" });
+    }
+    console.error("Error creating tag definition:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.put("/tag-definitions/:id", (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, description } = req.body;
+    if (!name) return res.status(400).json({ error: "Name is required" });
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const result = db
+      .prepare("UPDATE tag_definitions SET name = ?, description = ?, updated_at = ? WHERE id = ?")
+      .run(name.trim(), description || "", now, id);
+    if (result.changes === 0) return res.status(404).json({ error: "Tag not found" });
+    res.json(db.prepare("SELECT * FROM tag_definitions WHERE id = ?").get(id));
+  } catch (error) {
+    if (error.message.includes("UNIQUE")) {
+      return res.status(409).json({ error: "Tag name already exists" });
+    }
+    console.error("Error updating tag definition:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/tag-definitions/:id", (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = db.prepare("DELETE FROM tag_definitions WHERE id = ?").run(id);
+    if (result.changes === 0) return res.status(404).json({ error: "Tag not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting tag definition:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

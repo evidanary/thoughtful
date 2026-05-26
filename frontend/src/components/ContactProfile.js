@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   getContact,
   addNote,
@@ -9,6 +9,7 @@ import {
   deleteNote,
   deleteContact,
 } from "../api/contacts";
+import { getTagDefinitions } from "../api/tags";
 import NoteItem from "./NoteItem";
 import { useNavigate } from "react-router-dom";
 
@@ -38,7 +39,13 @@ const ContactProfile = ({ contactId }) => {
   const [contact, setContact] = useState(null);
   const [newNote, setNewNote] = useState("");
   const [newTag, setNewTag] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
+  const [allTagDefs, setAllTagDefs] = useState([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [activeTagIndex, setActiveTagIndex] = useState(-1);
   const [isEditing, setIsEditing] = useState(false);
+  const tagInputRef = useRef(null);
+  const tagDropdownRef = useRef(null);
   const [editData, setEditData] = useState({});
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const highlight = getQueryParam("highlight");
@@ -46,7 +53,22 @@ const ContactProfile = ({ contactId }) => {
 
   useEffect(() => {
     getContact(contactId).then(setContact);
+    getTagDefinitions().then(setAllTagDefs).catch(console.error);
   }, [contactId]);
+
+  // Close tag dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (
+        tagInputRef.current && !tagInputRef.current.contains(e.target) &&
+        tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)
+      ) {
+        setShowTagDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   // Close delete menu when clicking outside
   useEffect(() => {
@@ -72,11 +94,53 @@ const ContactProfile = ({ contactId }) => {
     setNewNote("");
   };
 
-  const handleAddTag = async () => {
-    await addTag(contactId, newTag);
-    const updated = await getContact(contactId);
+  const handleAddTag = async (tagName) => {
+    const name = (tagName || newTag).trim();
+    if (!name) return;
+    await addTag(contactId, name);
+    const [updated, defs] = await Promise.all([getContact(contactId), getTagDefinitions()]);
     setContact(updated);
+    setAllTagDefs(defs);
     setNewTag("");
+    setShowTagDropdown(false);
+    setActiveTagIndex(-1);
+  };
+
+  const handleTagInputChange = (e) => {
+    const val = e.target.value;
+    setNewTag(val);
+    setActiveTagIndex(-1);
+    if (val.trim()) {
+      const existing = contact?.tags || [];
+      const filtered = allTagDefs.filter(
+        (d) =>
+          d.name.toLowerCase().includes(val.toLowerCase()) &&
+          !existing.includes(d.name)
+      );
+      setTagSuggestions(filtered);
+      setShowTagDropdown(true);
+    } else {
+      setShowTagDropdown(false);
+    }
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeTagIndex >= 0 && tagSuggestions[activeTagIndex]) {
+        handleAddTag(tagSuggestions[activeTagIndex].name);
+      } else {
+        handleAddTag();
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveTagIndex((i) => Math.min(i + 1, tagSuggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveTagIndex((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Escape") {
+      setShowTagDropdown(false);
+    }
   };
 
   const handleDeleteTag = async (tagName) => {
@@ -310,14 +374,64 @@ const ContactProfile = ({ contactId }) => {
             </span>
           ))}
         </div>
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8, position: "relative" }}>
           <input
+            ref={tagInputRef}
             type="text"
             value={newTag}
-            placeholder="Add tag"
-            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="Add tag (Enter to save)"
+            onChange={handleTagInputChange}
+            onKeyDown={handleTagKeyDown}
+            onFocus={() => {
+              if (newTag.trim()) setShowTagDropdown(true);
+            }}
+            style={{
+              width: "100%",
+              padding: "7px 10px",
+              border: "1px solid #ddd",
+              borderRadius: 6,
+              fontSize: 13,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
           />
-          <button onClick={handleAddTag}>Save</button>
+          {showTagDropdown && tagSuggestions.length > 0 && (
+            <div
+              ref={tagDropdownRef}
+              style={{
+                position: "absolute",
+                top: "calc(100% + 4px)",
+                left: 0,
+                right: 0,
+                backgroundColor: "#fff",
+                border: "1px solid #e0e0e0",
+                borderRadius: 8,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                zIndex: 200,
+                maxHeight: 220,
+                overflowY: "auto",
+              }}
+            >
+              {tagSuggestions.map((def, i) => (
+                <div
+                  key={def.id}
+                  onMouseDown={() => handleAddTag(def.name)}
+                  style={{
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                    background: i === activeTagIndex ? "#f5f0ff" : "transparent",
+                    borderBottom: "1px solid #f8f8f8",
+                  }}
+                  onMouseEnter={() => setActiveTagIndex(i)}
+                >
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>{def.name}</div>
+                  {def.description && (
+                    <div style={{ fontSize: 11, color: "#999", marginTop: 1 }}>{def.description}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div style={{ marginTop: 12 }}>
           <button
@@ -425,7 +539,7 @@ const ContactProfile = ({ contactId }) => {
 
         <h3>Add Note</h3>
         <textarea
-          rows={3}
+          rows={15}
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
           style={{ width: "100%" }}

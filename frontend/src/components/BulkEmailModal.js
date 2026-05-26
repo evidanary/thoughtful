@@ -37,6 +37,8 @@ const BulkEmailModal = ({ onClose }) => {
   const [error, setError] = useState("");
   const [contacts, setContacts] = useState([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [mode, setMode] = useState("customize"); // "customize" | "bcc"
+  const [bccEmailData, setBccEmailData] = useState({ subject: "", body: "" });
 
   // Load email templates when modal opens
   useEffect(() => {
@@ -50,6 +52,7 @@ const BulkEmailModal = ({ onClose }) => {
         if (templatesData.length > 0) {
           const firstTemplate = templatesData[0];
           setSelectedTemplate(firstTemplate);
+          setBccEmailData({ subject: firstTemplate.subject, body: firstTemplate.body });
         }
         setError("");
       } catch (err) {
@@ -79,6 +82,8 @@ const BulkEmailModal = ({ onClose }) => {
         }
       });
       setContactEmails(newContactEmails);
+      // Refresh BCC data to the new template
+      setBccEmailData({ subject: template.subject, body: template.body });
     }
   };
 
@@ -211,6 +216,32 @@ const BulkEmailModal = ({ onClose }) => {
     console.log(
       `Email generated for contact ${selectedContact.name} (${selectedContact.email})`
     );
+  };
+
+  // Handle Send BCC Email - one email to all loaded contacts via BCC
+  const handleSendBccEmail = () => {
+    const recipients = contacts
+      .map((c) => c.email)
+      .filter((e) => e && e.trim());
+
+    if (recipients.length === 0) {
+      alert("No contacts with valid email addresses are loaded.");
+      return;
+    }
+
+    if (!bccEmailData.subject.trim() || !bccEmailData.body.trim()) {
+      alert("Please fill in both email subject and body.");
+      return;
+    }
+
+    const gmailBaseUrl = "https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1";
+    const bcc = encodeURIComponent(recipients.join(","));
+    const subject = encodeURIComponent(bccEmailData.subject);
+    const body = encodeURIComponent(bccEmailData.body);
+    const gmailUrl = `${gmailBaseUrl}&bcc=${bcc}&su=${subject}&body=${body}`;
+    window.open(gmailUrl, "_blank");
+
+    console.log(`BCC email generated for ${recipients.length} recipients`);
   };
 
   return (
@@ -364,12 +395,64 @@ const BulkEmailModal = ({ onClose }) => {
         </div>
 
 
-        {/* Contact Carousel */}
+        {/* Mode Selector */}
         {contactIds.trim() && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+              padding: "10px 14px",
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+            }}>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#333",
+              }}>
+                <input
+                  type="radio"
+                  name="bulkEmailMode"
+                  value="customize"
+                  checked={mode === "customize"}
+                  onChange={() => setMode("customize")}
+                />
+                Customize
+              </label>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#333",
+              }}>
+                <input
+                  type="radio"
+                  name="bulkEmailMode"
+                  value="bcc"
+                  checked={mode === "bcc"}
+                  onChange={() => setMode("bcc")}
+                />
+                Bcc Bulk
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Contact Carousel */}
+        {contactIds.trim() && mode === "customize" && (
           <div style={{ marginBottom: 24 }}>
-            <label style={{ 
-              display: "block", 
-              fontWeight: 600, 
+            <label style={{
+              display: "block",
+              fontWeight: 600,
               marginBottom: 8,
               fontSize: 14,
               color: "#333"
@@ -479,8 +562,111 @@ const BulkEmailModal = ({ onClose }) => {
           </div>
         )}
 
+        {/* BCC Bulk View - single email customization pane */}
+        {contactIds.trim() && mode === "bcc" && (
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{
+              margin: "0 0 16px 0",
+              fontSize: 16,
+              fontWeight: 600,
+              color: "#333",
+              borderBottom: "2px solid #4B0082",
+              paddingBottom: 8
+            }}>
+              📧 Email Customization
+            </h3>
+
+            <div style={{
+              marginBottom: 16,
+              padding: 12,
+              backgroundColor: "#f0f8ff",
+              border: "1px solid #b3d9ff",
+              borderRadius: 6,
+              fontSize: 12
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                Sending to {contacts.filter((c) => c.email && c.email.trim()).length} recipients (BCC)
+              </div>
+              <div style={{ color: "#555" }}>
+                One email will be sent with all loaded contact emails in BCC.
+              </div>
+              {contacts.filter((c) => !c.email || !c.email.trim()).length > 0 && (
+                <div style={{
+                  marginTop: 8,
+                  color: "#d32f2f",
+                  fontWeight: 700
+                }}>
+                  ⚠️ No email on file (will be skipped):{" "}
+                  {contacts
+                    .filter((c) => !c.email || !c.email.trim())
+                    .map((c) => c.name)
+                    .join(", ")}
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{
+                display: "block",
+                fontWeight: 600,
+                marginBottom: 6,
+                fontSize: 13,
+                color: "#333"
+              }}>
+                Subject
+              </label>
+              <input
+                type="text"
+                value={bccEmailData.subject}
+                onChange={(e) => setBccEmailData({ ...bccEmailData, subject: e.target.value })}
+                placeholder="Email subject..."
+                autoComplete="off"
+                style={{
+                  width: "100%",
+                  padding: 10,
+                  borderRadius: 6,
+                  border: "1px solid #ddd",
+                  fontSize: 13,
+                  boxSizing: "border-box"
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{
+                display: "block",
+                fontWeight: 600,
+                marginBottom: 6,
+                fontSize: 13,
+                color: "#333"
+              }}>
+                Email Body
+              </label>
+              <textarea
+                value={bccEmailData.body}
+                onChange={(e) => setBccEmailData({ ...bccEmailData, body: e.target.value })}
+                placeholder="Email body content..."
+                rows={12}
+                autoComplete="off"
+                style={{
+                  width: "100%",
+                  padding: 10,
+                  borderRadius: 6,
+                  border: "1px solid #ddd",
+                  fontSize: 13,
+                  fontFamily: "monospace",
+                  lineHeight: "1.4",
+                  resize: "vertical",
+                  minHeight: "250px",
+                  boxSizing: "border-box"
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Left/Right Panes Layout */}
-        {selectedContact && (
+        {mode === "customize" && selectedContact && (
           <div style={{
             display: "flex",
             gap: 24,
@@ -589,6 +775,15 @@ const BulkEmailModal = ({ onClose }) => {
                     </a>
                   </div>
                 )}
+                {(!selectedContact.email || !selectedContact.email.trim()) && (
+                  <div style={{
+                    marginTop: 8,
+                    color: "#d32f2f",
+                    fontWeight: 700
+                  }}>
+                    ⚠️ No email on file for {selectedContact.name} — cannot send.
+                  </div>
+                )}
               </div>
 
               <h3 style={{
@@ -686,7 +881,7 @@ const BulkEmailModal = ({ onClose }) => {
             Close
           </button>
           
-          {selectedContact && selectedContact.email && getCurrentEmailData().subject.trim() && getCurrentEmailData().body.trim() && (
+          {mode === "customize" && selectedContact && selectedContact.email && getCurrentEmailData().subject.trim() && getCurrentEmailData().body.trim() && (
             <button
               onClick={handleSendEmail}
               style={{
@@ -714,6 +909,37 @@ const BulkEmailModal = ({ onClose }) => {
             >
               <span style={{ fontSize: 16 }}>📧</span>
               Send Email
+            </button>
+          )}
+
+          {mode === "bcc" && contacts.length > 0 && bccEmailData.subject.trim() && bccEmailData.body.trim() && (
+            <button
+              onClick={handleSendBccEmail}
+              style={{
+                background: "linear-gradient(135deg, #4B0082, #00BFFF)",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                padding: "12px 24px",
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: 8
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 12px rgba(75, 0, 130, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "none";
+              }}
+            >
+              <span style={{ fontSize: 16 }}>📧</span>
+              Send Bcc Email
             </button>
           )}
         </div>

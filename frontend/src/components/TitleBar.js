@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import AddContactModal from "./AddContactModal";
 import QuickAddModal from "./QuickAddModal";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 /**
  *  Brand Gradient Color Meaning:
   - Outlasting the competition: Indigo (#4B0082)
@@ -12,26 +12,36 @@ import { Link, useNavigate } from "react-router-dom";
     Clear, practical, and open — blue is universally associated with utility, trust, and reliability.
  */
 
-const TitleBar = ({ onSearch, onShowBulkEmail }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+const TitleBar = ({ onShowBulkEmail }) => {
   const [showModal, setShowModal] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef(null);
 
+  // Keep input in sync with URL ?q param
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q") || "");
+  }, [searchParams]);
+
   const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    if (onSearch) {
-      onSearch(query);
-    }
+    setSearchQuery(e.target.value);
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (onSearch) {
-      onSearch(searchQuery);
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Escape") {
+      setSearchQuery("");
+      e.target.blur();
     }
   };
 
@@ -171,6 +181,31 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
           </Link>
 
           <Link
+            to="/tags"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: "#4B0082",
+              fontSize: "15px",
+              fontWeight: "500",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#f8f9fa";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>🏷️</span>
+            <span>Tags</span>
+          </Link>
+
+          <Link
             to="/quick-notes"
             style={{
               display: "flex",
@@ -203,15 +238,16 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
           display: "flex",
           alignItems: "center",
           gap: 16,
-          flex: "0 0 500px",
+          flex: "0 0 720px",
         }}
       >
         <form onSubmit={handleSearchSubmit} style={{ flex: 1 }}>
           <input
             type="text"
-            placeholder="Search contacts..."
+            placeholder="Search contacts, notes… (Enter)"
             value={searchQuery}
             onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
             style={{
               width: "100%",
               padding: "12px 16px",
@@ -222,7 +258,7 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
               transition: "border-color 0.2s ease",
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = "#3498db";
+              e.target.style.borderColor = "#4B0082";
             }}
             onBlur={(e) => {
               e.target.style.borderColor = "#ddd";
@@ -242,11 +278,38 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
             display: "flex",
             alignItems: "center",
             gap: 6,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
           }}
           onClick={() => setShowQuickAdd(true)}
         >
           <span style={{ fontSize: 16 }}>⚡</span>
           Quick Add
+        </button>
+        <button
+          style={{
+            background: "#fff",
+            color: "#4B0082",
+            border: "2px solid #4B0082",
+            borderRadius: 6,
+            padding: "9px 16px",
+            fontWeight: 600,
+            fontSize: 15,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+          onClick={() => {
+            if (onShowBulkEmail) {
+              onShowBulkEmail();
+            }
+          }}
+        >
+          <span style={{ fontSize: 16 }}>📧</span>
+          Bulk Email
         </button>
         <button
           style={{
@@ -259,6 +322,8 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
             fontSize: 15,
             cursor: "pointer",
             boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
           }}
           onClick={() => setShowModal(true)}
         >
@@ -331,41 +396,6 @@ const TitleBar = ({ onSearch, onShowBulkEmail }) => {
                 marginTop: "8px",
               }}
             >
-              <div
-                style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#f8f9fa";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "white";
-                }}
-                onClick={() => {
-                  setShowMenu(false);
-                  if (onShowBulkEmail) {
-                    onShowBulkEmail();
-                  }
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <span style={{ fontSize: "16px" }}>📧</span>
-                  <span style={{ fontWeight: 500 }}>Bulk Email</span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  height: "1px",
-                  backgroundColor: "#e0e0e0",
-                  margin: "4px 0",
-                }}
-              />
-
               <div
                 style={{
                   padding: "12px 16px",

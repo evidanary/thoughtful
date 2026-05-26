@@ -11,18 +11,13 @@ import BulkEmailModal from "./components/BulkEmailModal";
 import ShortcutsModal from "./components/ShortcutsModal";
 import SocialMedia from "./components/SocialMedia";
 import QuickNotesPage from "./components/QuickNotesPage";
+import TagsPage from "./components/TagsPage";
+import SearchResultsPage from "./components/SearchResultsPage";
 
 function AppContent() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const navigate = useNavigate();
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    // TODO: Implement search functionality
-    console.log("Searching for:", query);
-  };
 
   const handleShowBulkEmail = () => {
     setShowBulkEmailModal(true);
@@ -121,7 +116,7 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      <TitleBar onSearch={handleSearch} onShowBulkEmail={handleShowBulkEmail} />
+      <TitleBar onShowBulkEmail={handleShowBulkEmail} />
       <Routes>
         <Route path="/" element={<ContactList />} />
         <Route path="/profile/:id" element={<ContactProfileWrapper />} />
@@ -130,6 +125,8 @@ function AppContent() {
         <Route path="/action-items" element={<ActionItems />} />
         <Route path="/social-media" element={<SocialMedia />} />
         <Route path="/quick-notes" element={<QuickNotesPage />} />
+        <Route path="/tags" element={<TagsPage />} />
+        <Route path="/search" element={<SearchResultsPage />} />
       </Routes>
       {showBulkEmailModal && (
         <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />

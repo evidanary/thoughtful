@@ -18,10 +18,10 @@ const Milestones = () => {
     },
     {
       id: 2,
-      title: "Release Paid Version - $12.99 Plan",
+      title: "Release Paid Version - $13.99 Plan",
       description:
-        "Launch a paid version of the product at $12.99 to offset development and operational costs.",
-      date: "In Progress",
+        "Launch a paid version of the product at $13.99 per month to offset development and operational costs.",
+      date: "Complete",
       icon: "💰",
       color: "#FFB6C1",
       timeline: [
@@ -33,36 +33,65 @@ const Milestones = () => {
     },
     {
       id: 3,
-      title: "1000 Installs",
-      description:
-        "Reach the milestone of 1000 product installations, demonstrating market validation and user adoption.",
-      date: "Target",
+      title: "60 reviews on Shopify App Store",
+      description: "Prove we can keep users engaged and satisfied.",
+      date: "In Progress",
       icon: "📈",
       color: "#00BFFF",
       timeline: [
-        "Implement analytics and tracking system",
-        "Launch marketing campaigns and outreach",
-        "Optimize conversion rates and user onboarding",
-        "Monitor growth metrics and user feedback",
+        "Launch redesigned app",
+        "Launch lifecycle emails",
+        "Get the app to 60 reviews",
+        "Figure out proactive support (propport) process to get a stream of reviews",
       ],
     },
     {
       id: 4,
-      title: "Release Auto Video Generation",
+      title: "Independent tech team that does engineering well",
       description:
-        "Launch automated video generation feature to enhance product capabilities and user experience.",
+        "We need a team that can do high quality engineering well and is independent from the business and that moves fast.",
+      date: "Planned",
+      icon: "🎥",
+      color: "#4B0082",
+      timeline: [],
+    },
+    {
+      id: 4.1,
+      title: "Weekly posts to the authority video top of funnel channel.",
+      description:
+        "Branding and content for the authority video top of funnel channel.",
       date: "Planned",
       icon: "🎥",
       color: "#4B0082",
       timeline: [
-        "Research and select video generation technology",
-        "Develop video templates and customization options",
-        "Integrate with existing product workflow",
-        "Test and optimize video quality and performance",
+        "A website like ecom video ideas is created and populated with video ideas from merchants to have Videoselz look like the best product",
+        "Videos are created and posted to the channel weekly",
+        "Teardown of the videos and user exeperience is analyzed in videos",
+        "website should look like https://ecomideas.com/featured-idea-gallery/shoppable-tiktok-widgets",
       ],
     },
     {
       id: 5,
+      title: "Conversion to paid plan is high",
+      description: "High conversion rate from free to paid plan.",
+      date: "Planned",
+      icon: "🎥",
+      color: "#4B0082",
+      timeline: [],
+    },
+    {
+      id: 6,
+      title:
+        "Tech team that analyzes data, decides on future plans and executes them fast. ",
+      description:
+        "We need a team that can analyze data, decide on future plans and execute them fast.",
+      date: "Planned",
+      icon: "🎥",
+      color: "#4B0082",
+      timeline: [],
+    },
+    {
+      id: 7,
       title: "Standalone B2B Video Generator",
       description:
         "Release a standalone product that generates videos for B2B selling and custom site users.",
@@ -74,6 +103,17 @@ const Milestones = () => {
         "Develop standalone application architecture",
         "Create custom video templates for B2B use cases",
         "Launch beta program with enterprise customers",
+      ],
+    },
+    {
+      id: 7.1,
+      title: "Plus shopify plan is created with bunch of custom features",
+      description: "Cold emails is started.",
+      date: "Future",
+      icon: "🚀",
+      color: "#FFB6C1",
+      timeline: [
+        "Cold emails is started with backlinks to all the work we've done and results we've achieved for merchants",
       ],
     },
   ];
