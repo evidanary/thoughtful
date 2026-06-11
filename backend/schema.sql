@@ -110,3 +110,12 @@ BEGIN
     INSERT INTO activity (contact_id, activity_type, description, metadata)
     VALUES (OLD.contact_id, 'tag_removed', 'Tag removed', json_object('tag', OLD.name));
 END;
+
+CREATE TABLE IF NOT EXISTS milestone_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tab TEXT NOT NULL,
+    milestone_id TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tab, milestone_id)
+);

@@ -771,4 +771,35 @@ app.delete("/quick-notes/:id", (req, res) => {
   }
 });
 
+app.get("/milestone-notes", (req, res) => {
+  try {
+    const rows = db.prepare("SELECT tab, milestone_id, note FROM milestone_notes").all();
+    const result = {};
+    for (const row of rows) {
+      result[`${row.tab}-${row.milestone_id}`] = row.note;
+    }
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching milestone notes:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.put("/milestone-notes", (req, res) => {
+  try {
+    const { tab, milestone_id, note } = req.body;
+    if (!tab || milestone_id == null) return res.status(400).json({ error: "tab and milestone_id are required" });
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+    db.prepare(
+      `INSERT INTO milestone_notes (tab, milestone_id, note, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(tab, milestone_id) DO UPDATE SET note = excluded.note, updated_at = excluded.updated_at`
+    ).run(tab, String(milestone_id), note || "", now);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error saving milestone note:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.listen(3001, () => console.log("Backend running on http://localhost:3001"));
