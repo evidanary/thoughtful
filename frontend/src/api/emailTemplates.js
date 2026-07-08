@@ -1,6 +1,5 @@
 import axios from "axios";
-
-export const API = "http://localhost:3001";
+import { API } from "./contacts";
 
 export const getAllEmailTemplates = async () => {
   const res = await axios.get(`${API}/email-templates`);

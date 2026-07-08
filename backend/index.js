@@ -802,4 +802,4 @@ app.put("/milestone-notes", (req, res) => {
   }
 });
 
-app.listen(3001, () => console.log("Backend running on http://localhost:3001"));
+app.listen(3002, () => console.log("Backend running on http://localhost:3002"));
