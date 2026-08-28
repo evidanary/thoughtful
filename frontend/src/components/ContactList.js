@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAllContacts } from "../api/contacts";
 import { getAllViews } from "../api/views";
 import ContactProfilePreview from "./ContactProfilePreview";
@@ -43,6 +44,7 @@ const ContactList = () => {
   const [activityError, setActivityError] = useState(null);
   const [selectedContacts, setSelectedContacts] = useState(new Set());
   const [showCopySuccess, setShowCopySuccess] = useState(false);
+  const navigate = useNavigate();
 
   // Handle individual contact selection
   const handleContactSelect = (contactId, isSelected) => {
@@ -404,6 +406,32 @@ const ContactList = () => {
                 onMouseOut={(e) => (e.target.style.background = "none")}
               >
                 Export to CSV
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/stamina-viz", {
+                    state: { contacts: filteredContacts },
+                  });
+                  setShowMoreActions(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "none",
+                  borderTop: "1px solid #eee",
+                  background: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  color: "#333",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+                onMouseOver={(e) => (e.target.style.background = "#f5f5f5")}
+                onMouseOut={(e) => (e.target.style.background = "none")}
+              >
+                View in 3D (Stamina Viz)
               </button>
             </div>
           )}

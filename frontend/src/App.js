@@ -13,6 +13,7 @@ import SocialMedia from "./components/SocialMedia";
 import QuickNotesPage from "./components/QuickNotesPage";
 import TagsPage from "./components/TagsPage";
 import SearchResultsPage from "./components/SearchResultsPage";
+import StaminaViz from "./components/StaminaViz";
 
 function AppContent() {
   const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
@@ -127,6 +128,7 @@ function AppContent() {
         <Route path="/quick-notes" element={<QuickNotesPage />} />
         <Route path="/tags" element={<TagsPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
+        <Route path="/stamina-viz" element={<StaminaViz />} />
       </Routes>
       {showBulkEmailModal && (
         <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />
