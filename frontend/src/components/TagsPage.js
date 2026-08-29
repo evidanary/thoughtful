@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getTagDefinitions, createTagDefinition, updateTagDefinition, deleteTagDefinition } from "../api/tags";
+import { getAllContacts } from "../api/contacts";
 
 export default function TagsPage() {
   const [tags, setTags] = useState([]);
@@ -9,6 +11,9 @@ export default function TagsPage() {
   const [newTag, setNewTag] = useState({ name: "", description: "" });
   const [showNewForm, setShowNewForm] = useState(false);
   const [error, setError] = useState("");
+  const [expandedTag, setExpandedTag] = useState(null);
+  const [tagContacts, setTagContacts] = useState({});
+  const [loadingContacts, setLoadingContacts] = useState(false);
 
   const fetchTags = async () => {
     try {
@@ -24,6 +29,25 @@ export default function TagsPage() {
   useEffect(() => {
     fetchTags();
   }, []);
+
+  // Clicking a tag reveals everyone carrying it; results are cached per tag
+  const handleToggleTag = async (name) => {
+    if (expandedTag === name) {
+      setExpandedTag(null);
+      return;
+    }
+    setExpandedTag(name);
+    if (tagContacts[name]) return;
+    setLoadingContacts(true);
+    try {
+      const data = await getAllContacts(`?tags=${encodeURIComponent(name)}`);
+      setTagContacts((prev) => ({ ...prev, [name]: data }));
+    } catch (err) {
+      console.error(err);
+      setTagContacts((prev) => ({ ...prev, [name]: [] }));
+    }
+    setLoadingContacts(false);
+  };
 
   const handleCreate = async () => {
     if (!newTag.name.trim()) return;
@@ -44,6 +68,8 @@ export default function TagsPage() {
     try {
       await updateTagDefinition(id, editData.name.trim(), editData.description.trim());
       setEditingId(null);
+      setTagContacts({});
+      setExpandedTag(null);
       fetchTags();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update tag");
@@ -216,18 +242,28 @@ export default function TagsPage() {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span
+                      <button
+                        onClick={() => handleToggleTag(tag.name)}
+                        title={`Show contacts tagged "${tag.name}"`}
                         style={{
-                          background: "#f3ecff",
-                          color: "#4B0082",
-                          padding: "3px 10px",
+                          background: expandedTag === tag.name ? "#4B0082" : "#f3ecff",
+                          color: expandedTag === tag.name ? "#fff" : "#4B0082",
+                          border: "none",
+                          padding: "4px 12px",
                           borderRadius: 20,
                           fontSize: 13,
                           fontWeight: 600,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
                         {tag.name}
-                      </span>
+                        <span style={{ fontSize: 9 }}>
+                          {expandedTag === tag.name ? "▾" : "▸"}
+                        </span>
+                      </button>
                       <span style={{ fontSize: 11, color: "#bbb" }}>
                         {tag.usage_count} contact{tag.usage_count !== 1 ? "s" : ""}
                       </span>
@@ -236,6 +272,56 @@ export default function TagsPage() {
                       <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>{tag.description}</div>
                     ) : (
                       <div style={{ fontSize: 12, color: "#ccc", marginTop: 6, fontStyle: "italic" }}>No description</div>
+                    )}
+
+                    {expandedTag === tag.name && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          borderTop: "1px solid #f0f0f0",
+                          paddingTop: 10,
+                        }}
+                      >
+                        {loadingContacts && !tagContacts[tag.name] ? (
+                          <div style={{ fontSize: 13, color: "#aaa" }}>Loading contacts…</div>
+                        ) : (tagContacts[tag.name] || []).length === 0 ? (
+                          <div style={{ fontSize: 13, color: "#aaa" }}>
+                            No contacts carry this tag yet.
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            {(tagContacts[tag.name] || []).map((contact) => (
+                              <Link
+                                key={contact.id}
+                                to={`/profile/${contact.id}`}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "baseline",
+                                  gap: 8,
+                                  padding: "6px 8px",
+                                  borderRadius: 6,
+                                  textDecoration: "none",
+                                  color: "#333",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f6fc")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                              >
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "#4B0082" }}>
+                                  {contact.name}
+                                </span>
+                                {contact.company && (
+                                  <span style={{ fontSize: 12, color: "#888" }}>{contact.company}</span>
+                                )}
+                                {contact.email && (
+                                  <span style={{ fontSize: 11, color: "#bbb", marginLeft: "auto" }}>
+                                    {contact.email}
+                                  </span>
+                                )}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
