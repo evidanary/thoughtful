@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import AddContactModal from "./AddContactModal";
 import QuickAddModal from "./QuickAddModal";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { getCurrentUser, signOut, displayName } from "../api/auth";
+import { getAuthConfig, getCurrentUser, signOut, displayName } from "../api/auth";
 /**
  *  Brand Gradient Color Meaning:
   - Outlasting the competition: Indigo (#4B0082)
@@ -29,6 +29,7 @@ const SideBar = ({ onShowBulkEmail }) => {
   const [showModal, setShowModal] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [user, setUser] = useState(null);
+  const [authEnabled, setAuthEnabled] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,6 +43,9 @@ const SideBar = ({ onShowBulkEmail }) => {
 
   useEffect(() => {
     getCurrentUser().then(setUser).catch(() => setUser(null));
+    getAuthConfig()
+      .then((cfg) => setAuthEnabled(cfg.authEnabled))
+      .catch(() => setAuthEnabled(true));
   }, []);
 
   const handleSignOut = async () => {
@@ -225,20 +229,36 @@ const SideBar = ({ onShowBulkEmail }) => {
               {user.email}
             </div>
           </div>
-          <button
-            onClick={handleSignOut}
-            title="Sign out"
-            style={{
-              background: "none",
-              border: "none",
-              color: "#aaa",
-              cursor: "pointer",
-              fontSize: 14,
-              padding: 2,
-            }}
-          >
-            ⏻
-          </button>
+          {authEnabled ? (
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#aaa",
+                cursor: "pointer",
+                fontSize: 14,
+                padding: 2,
+              }}
+            >
+              ⏻
+            </button>
+          ) : (
+            <span
+              title="Google sign-in is off because GOOGLE_CLIENT_ID is not set. The server reports a fixed local user, so there is no session to end."
+              style={{
+                fontSize: 9,
+                color: "#bbb",
+                border: "1px solid #eee",
+                borderRadius: 4,
+                padding: "2px 5px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              dev
+            </span>
+          )}
         </div>
       )}
 

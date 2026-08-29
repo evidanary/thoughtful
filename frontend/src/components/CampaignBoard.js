@@ -44,6 +44,7 @@ const CampaignBoard = () => {
   const [showStages, setShowStages] = useState(false);
   const [showAddContacts, setShowAddContacts] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -61,6 +62,16 @@ const CampaignBoard = () => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showMoreMenu && !event.target.closest("[data-campaign-menu]")) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMoreMenu]);
 
   const moveContact = async (contactId, stageId) => {
     if (!campaign) return;
@@ -218,12 +229,62 @@ const CampaignBoard = () => {
             <button onClick={() => setShowEdit(true)} style={secondaryButton}>
               Edit
             </button>
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{ ...secondaryButton, color: "#c00", borderColor: "#f0c0c0" }}
-            >
-              Delete
-            </button>
+            {/* Destructive actions live behind the ⋯ menu */}
+            <div style={{ position: "relative" }} data-campaign-menu>
+              <button
+                onClick={() => setShowMoreMenu((prev) => !prev)}
+                title="More actions"
+                style={{
+                  ...secondaryButton,
+                  padding: "8px 12px",
+                  fontSize: 16,
+                  lineHeight: 1,
+                  color: "#666",
+                  borderColor: "#ddd",
+                }}
+              >
+                ⋯
+              </button>
+
+              {showMoreMenu && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    right: 0,
+                    marginTop: 4,
+                    background: "#fff",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 6,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                    minWidth: 170,
+                    zIndex: 20,
+                    overflow: "hidden",
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setConfirmDelete(true);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "none",
+                      background: "none",
+                      textAlign: "left",
+                      fontSize: 13,
+                      color: "#c00",
+                      cursor: "pointer",
+                    }}
+                    onMouseOver={(e) => (e.target.style.background = "#fff5f5")}
+                    onMouseOut={(e) => (e.target.style.background = "none")}
+                  >
+                    Delete campaign
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

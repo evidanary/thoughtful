@@ -39,6 +39,10 @@ fly launch --no-deploy --name thoughtful-crm --region yyz   # reuses fly.toml
 fly volumes create thoughtful_data --region yyz --size 1
 ```
 
+Fly app names are globally unique. If `thoughtful-crm` is taken, pick another
+name, update `app =` in `fly.toml`, and use that hostname everywhere below —
+including the authorized JavaScript origin in step 1.
+
 ## 3. Set the secrets
 
 ```bash
