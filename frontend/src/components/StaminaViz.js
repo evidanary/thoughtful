@@ -431,7 +431,7 @@ const StaminaViz = () => {
   }, []);
 
   return (
-    <div style={{ position: "relative", height: "calc(100vh - 60px)" }}>
+    <div style={{ position: "relative", height: "100vh" }}>
       <div
         style={{
           position: "absolute",

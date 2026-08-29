@@ -11,6 +11,8 @@ import {
 } from "../api/contacts";
 import { getTagDefinitions } from "../api/tags";
 import NoteItem from "./NoteItem";
+import ContactCampaigns from "./ContactCampaigns";
+import { displayName } from "../api/auth";
 import { useNavigate } from "react-router-dom";
 
 // Utility to get query param
@@ -338,6 +340,15 @@ const ContactProfile = ({ contactId }) => {
             <p>Email: {highlightText(contact.email, highlight)}</p>
             <p>LinkedIn: {highlightText(contact.linkedin, highlight)}</p>
             <p>Company: {highlightText(contact.company, highlight)}</p>
+            {contact.created_by && (
+              <p style={{ fontSize: 12, color: "#999" }}>
+                Added by {displayName(contact.created_by)}
+                {contact.updated_by &&
+                  contact.updated_by !== contact.created_by && (
+                    <> · last edited by {displayName(contact.updated_by)}</>
+                  )}
+              </p>
+            )}
           </div>
         )}
 
@@ -433,6 +444,8 @@ const ContactProfile = ({ contactId }) => {
             </div>
           )}
         </div>
+        <ContactCampaigns contactId={contactId} />
+
         <div style={{ marginTop: 12 }}>
           <button
             style={{

@@ -1,6 +1,31 @@
 import axios from "axios";
 
-export const API = "http://localhost:3002";
+// In production the API and the UI share an origin (Express serves the built
+// React app), so an empty base URL is correct. Locally CRA runs on :3000 while
+// the backend stays on :3002.
+export const API =
+  process.env.REACT_APP_API_URL !== undefined
+    ? process.env.REACT_APP_API_URL
+    : window.location.port === "3000"
+    ? "http://localhost:3002"
+    : "";
+
+// The session lives in an HttpOnly cookie, so every request must carry it
+axios.defaults.withCredentials = true;
+
+// A dead or expired session should bounce the whole app back to sign-in rather
+// than surfacing as a random failure inside whichever page made the call.
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url || "";
+    if (status === 401 && !url.includes("/auth/")) {
+      window.dispatchEvent(new CustomEvent("thoughtful:signed-out"));
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const getContact = async (id) => {
   const res = await axios.get(`${API}/contacts/${id}`);

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { displayName } from "../api/auth";
 
 const NoteItem = ({
   note,
@@ -78,6 +79,14 @@ const NoteItem = ({
         <strong style={{ fontSize: "16px", color: "#2c3e50" }}>
           {formatDate(note.created_at)}
         </strong>
+        {note.created_by && (
+          <span style={{ fontSize: "12px", color: "#999" }}>
+            by {displayName(note.created_by)}
+            {note.updated_by && note.updated_by !== note.created_by && (
+              <> · edited by {displayName(note.updated_by)}</>
+            )}
+          </span>
+        )}
         {isHovered && (
           <div style={{ display: "flex", gap: "4px", marginLeft: "8px" }}>
             <button

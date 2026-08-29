@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ContactProfile from "./components/ContactProfile";
 import ContactList from "./components/ContactList";
-import TitleBar from "./components/TitleBar";
+import SideBar from "./components/SideBar";
 import Milestones from "./components/Milestones";
 import EmailTemplates from "./components/EmailTemplates";
 import ActionItems from "./components/ActionItems";
@@ -14,6 +14,10 @@ import QuickNotesPage from "./components/QuickNotesPage";
 import TagsPage from "./components/TagsPage";
 import SearchResultsPage from "./components/SearchResultsPage";
 import StaminaViz from "./components/StaminaViz";
+import CampaignsPage from "./components/CampaignsPage";
+import CampaignBoard from "./components/CampaignBoard";
+import CampaignsCombinedPage from "./components/CampaignsCombinedPage";
+import AuthGate from "./components/AuthGate";
 
 function AppContent() {
   const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
@@ -102,6 +106,10 @@ function AppContent() {
             // Navigate to social media
             navigate("/social-media");
             break;
+          case "c":
+            // Navigate to campaigns
+            navigate("/campaigns");
+            break;
           default:
             break;
         }
@@ -116,20 +124,28 @@ function AppContent() {
   }, [showShortcutsModal, showBulkEmailModal, navigate]);
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      <TitleBar onShowBulkEmail={handleShowBulkEmail} />
-      <Routes>
-        <Route path="/" element={<ContactList />} />
-        <Route path="/profile/:id" element={<ContactProfileWrapper />} />
-        <Route path="/milestones" element={<Milestones />} />
-        <Route path="/email-templates" element={<EmailTemplates />} />
-        <Route path="/action-items" element={<ActionItems />} />
-        <Route path="/social-media" element={<SocialMedia />} />
-        <Route path="/quick-notes" element={<QuickNotesPage />} />
-        <Route path="/tags" element={<TagsPage />} />
-        <Route path="/search" element={<SearchResultsPage />} />
-        <Route path="/stamina-viz" element={<StaminaViz />} />
-      </Routes>
+    <div style={{ display: "flex", height: "100vh", backgroundColor: "#f8f9fa" }}>
+      <SideBar onShowBulkEmail={handleShowBulkEmail} />
+      <div style={{ flex: 1, minWidth: 0, height: "100vh", overflowY: "auto" }}>
+        <Routes>
+          <Route path="/" element={<ContactList />} />
+          <Route path="/profile/:id" element={<ContactProfileWrapper />} />
+          <Route path="/milestones" element={<Milestones />} />
+          <Route path="/email-templates" element={<EmailTemplates />} />
+          <Route path="/action-items" element={<ActionItems />} />
+          <Route path="/social-media" element={<SocialMedia />} />
+          <Route path="/quick-notes" element={<QuickNotesPage />} />
+          <Route path="/tags" element={<TagsPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
+          <Route path="/stamina-viz" element={<StaminaViz />} />
+          <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route
+            path="/campaigns/combined"
+            element={<CampaignsCombinedPage />}
+          />
+          <Route path="/campaigns/:id" element={<CampaignBoard />} />
+        </Routes>
+      </div>
       {showBulkEmailModal && (
         <BulkEmailModal onClose={() => setShowBulkEmailModal(false)} />
       )}
@@ -142,9 +158,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthGate>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthGate>
   );
 }
 

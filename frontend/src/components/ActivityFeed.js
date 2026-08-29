@@ -103,6 +103,24 @@ const ActivityFeed = ({ activities, loading, error }) => {
           </>
         );
 
+      case "campaign_added":
+        const joinedData = parseMetadata(activity.metadata);
+        return (
+          <>
+            {contactLink} added to campaign "{joinedData.campaign || "?"}"
+            {joinedData.stage ? ` at "${joinedData.stage}"` : ""}
+          </>
+        );
+
+      case "campaign_stage_changed":
+        const movedData = parseMetadata(activity.metadata);
+        return (
+          <>
+            {contactLink} moved to "{movedData.to || "unassigned"}" in campaign "
+            {movedData.campaign || "?"}"
+          </>
+        );
+
       default:
         return (
           <>

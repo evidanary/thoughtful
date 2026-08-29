@@ -119,3 +119,105 @@ CREATE TABLE IF NOT EXISTS milestone_notes (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(tab, milestone_id)
 );
+
+-- ============================================================
+-- Campaigns: time-bound outreach pushes with per-campaign stages
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS campaigns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    goal TEXT DEFAULT '',
+    status TEXT DEFAULT 'active', -- 'active' | 'paused' | 'completed'
+    start_date TEXT,
+    end_date TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Every campaign owns its own ordered list of stages
+CREATE TABLE IF NOT EXISTS campaign_stages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    campaign_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    color TEXT DEFAULT '#4B0082',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+);
+
+-- A contact's membership in a campaign, and where they sit in its progression
+CREATE TABLE IF NOT EXISTS campaign_contacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    campaign_id INTEGER NOT NULL,
+    contact_id INTEGER NOT NULL,
+    stage_id INTEGER,
+    notes TEXT DEFAULT '',
+    added_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    stage_changed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(campaign_id, contact_id),
+    FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+    FOREIGN KEY(contact_id) REFERENCES contacts(id) ON DELETE CASCADE,
+    FOREIGN KEY(stage_id) REFERENCES campaign_stages(id) ON DELETE SET NULL
+);
+
+-- The default stage set copied into every new campaign (editable in the UI)
+CREATE TABLE IF NOT EXISTS stage_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    color TEXT DEFAULT '#4B0082',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Trigger for adding a contact to a campaign
+CREATE TRIGGER IF NOT EXISTS track_campaign_contact_added
+AFTER INSERT ON campaign_contacts
+BEGIN
+    INSERT INTO activity (contact_id, activity_type, description, metadata)
+    VALUES (
+        NEW.contact_id,
+        'campaign_added',
+        'Added to campaign',
+        json_object(
+            'campaign', (SELECT name FROM campaigns WHERE id = NEW.campaign_id),
+            'campaign_id', NEW.campaign_id,
+            'stage', (SELECT name FROM campaign_stages WHERE id = NEW.stage_id)
+        )
+    );
+END;
+
+-- Trigger for moving a contact between stages
+CREATE TRIGGER IF NOT EXISTS track_campaign_stage_changed
+AFTER UPDATE OF stage_id ON campaign_contacts
+WHEN OLD.stage_id IS NOT NEW.stage_id
+BEGIN
+    INSERT INTO activity (contact_id, activity_type, description, metadata)
+    VALUES (
+        NEW.contact_id,
+        'campaign_stage_changed',
+        'Moved campaign stage',
+        json_object(
+            'campaign', (SELECT name FROM campaigns WHERE id = NEW.campaign_id),
+            'campaign_id', NEW.campaign_id,
+            'from', (SELECT name FROM campaign_stages WHERE id = OLD.stage_id),
+            'to', (SELECT name FROM campaign_stages WHERE id = NEW.stage_id)
+        )
+    );
+END;
+
+-- Trigger for removing a contact from a campaign
+CREATE TRIGGER IF NOT EXISTS track_campaign_contact_removed
+AFTER DELETE ON campaign_contacts
+BEGIN
+    INSERT INTO activity (contact_id, activity_type, description, metadata)
+    VALUES (
+        OLD.contact_id,
+        'campaign_removed',
+        'Removed from campaign',
+        json_object('campaign_id', OLD.campaign_id)
+    );
+END;

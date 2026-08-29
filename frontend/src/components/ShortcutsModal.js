@@ -171,6 +171,11 @@ const ShortcutsModal = ({ onClose }) => {
           </div>
 
           <div style={shortcutRowStyle}>
+            <span style={descriptionStyle}>Navigate to campaigns</span>
+            <span style={keyStyle}>G → C</span>
+          </div>
+
+          <div style={shortcutRowStyle}>
             <span style={descriptionStyle}>Navigate to social media</span>
             <span style={keyStyle}>G → S</span>
           </div>

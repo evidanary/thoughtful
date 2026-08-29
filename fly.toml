@@ -1,0 +1,36 @@
+# Fly.io configuration for Thoughtful
+# Deploy: fly deploy
+# Secrets (see DEPLOY.md): fly secrets set GOOGLE_CLIENT_ID=... SESSION_SECRET=...
+
+app = "thoughtful-crm"
+primary_region = "yyz"  # Toronto — same region as porpoise
+
+[build]
+
+[env]
+  PORT = "3002"
+  DB_PATH = "/data/db.sqlite"
+  NODE_ENV = "production"
+  # How long a Google sign-in lasts before people re-authenticate
+  SESSION_TTL_HOURS = "12"
+
+[http_service]
+  internal_port = 3002
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 50
+    soft_limit = 25
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# Persistent volume for the SQLite DB — without this every deploy wipes the data
+[[mounts]]
+  source = "thoughtful_data"
+  destination = "/data"
