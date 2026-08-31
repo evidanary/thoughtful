@@ -1,5 +1,7 @@
 # Thoughtful — Personal Relationship Manager
 
+User-facing docs live in `README.md` (overview), `DEPLOY.md` (Fly.io setup) and `BACKUP.md` (recovery). Keep them in sync when behaviour changes.
+
 A full-stack CRM for managing personal/professional contacts, notes, tags, action items, milestones, and email outreach.
 
 ## Quick Commands
