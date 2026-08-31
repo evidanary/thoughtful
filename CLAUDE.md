@@ -60,6 +60,15 @@ Time-bound outreach pushes. **Every campaign owns its own ordered stage list** â
 
 Fly.io, one machine, mirroring the porpoise app: `Dockerfile` builds the React app and copies it to `backend/public`, which Express serves alongside the API (same origin, so cookies just work). SQLite lives on a volume at `/data/db.sqlite`, seeded on first boot from the committed `backend/db.sqlite`. Full runbook in `DEPLOY.md`.
 
+## Backups
+
+The production database is one SQLite file on a Fly volume, so backups matter.
+`./scripts/backup.sh` snapshots it (via SQLite's online backup API, never `cat`),
+downloads it to `backups/`, verifies it, keeps the newest 5, and commits to Git.
+`./scripts/deploy.sh` wraps `fly deploy` with that backup. Recovery runbook:
+`BACKUP.md`. The scripts under `backend/scripts/` run **on the machine** and are
+in the image because the Dockerfile copies all of `backend/`.
+
 ## Gmail Compose Integration
 
 Bulk email opens `https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1` with URL-encoded `to` / `bcc` / `su` / `body` params â€” no Gmail API, no auth. Each click opens a new tab.
