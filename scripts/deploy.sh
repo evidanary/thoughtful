@@ -13,11 +13,17 @@ cd "$REPO_ROOT"
 
 APP="$(grep -E '^app *= *' fly.toml | head -1 | sed -E 's/.*"(.*)".*/\1/')"
 
+# `fly status` succeeds as soon as the app exists, which it does from
+# `fly apps create` — long before anything is deployed. Count machines instead.
+MACHINES="$(fly machines list --app "$APP" --json 2>/dev/null \
+  | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))' 2>/dev/null \
+  || echo 0)"
+
 if [ "${SKIP_BACKUP:-0}" = "1" ]; then
   echo "==> Skipping pre-deploy backup (SKIP_BACKUP=1)"
-elif ! fly status --app "$APP" >/dev/null 2>&1; then
+elif [ "$MACHINES" = "0" ]; then
   # Nothing to back up before the very first deploy
-  echo "==> ${APP} is not deployed yet — skipping the pre-deploy backup"
+  echo "==> ${APP} has no machines yet — skipping the pre-deploy backup"
 else
   echo "==> Pre-deploy backup"
   ./scripts/backup.sh
