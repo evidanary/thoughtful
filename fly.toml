@@ -11,8 +11,8 @@ primary_region = "yyz"  # Toronto — same region as porpoise
   PORT = "3002"
   DB_PATH = "/data/db.sqlite"
   NODE_ENV = "production"
-  # How long a Google sign-in lasts before people re-authenticate
-  SESSION_TTL_HOURS = "12"
+  # How long a Google sign-in lasts before people re-authenticate (30 days)
+  SESSION_TTL_HOURS = "720"
 
 [http_service]
   internal_port = 3002

@@ -66,6 +66,14 @@ engaged → Closed), then diverge freely.
 - `/campaigns/combined?ids=1,2` puts several campaigns side by side. Since
   their stages differ, the roll-up is a matrix: one row per person, one column
   per campaign, each cell their stage there.
+- **Follow-ups** — each card shows `Last: … · Next: …`. "✓ Contacted" (or
+  moving someone to a later stage) stamps Last with today. Clicking Next opens
+  a three-month calendar with snooze buttons (+1d/+7d/+30d, +1m/+2m/+3m, all
+  counted from today). Cards get a red (overdue), orange (due today) or gray
+  (upcoming) left edge and due pill, and each column sorts most-urgent first.
+  "Show actionable only" hides everyone not yet due, and a "To contact" panel
+  beside the board lists who is overdue or due today. Moving a card never
+  changes its Next date.
 - A contact's profile lists the campaigns they are in and their stage in each.
 
 **Tags** — a tag library with descriptions at `/tags`. Click any tag to expand
@@ -143,8 +151,9 @@ const ALLOWED_USERS = [
 
 Google Identity Services issues an ID token, the server verifies it and checks
 the list, then mints an HttpOnly session cookie. Sessions expire after
-`SESSION_TTL_HOURS` (default 12) so people re-authenticate periodically; change
-it with `fly secrets set SESSION_TTL_HOURS=8`. A valid Google account that is
+`SESSION_TTL_HOURS` — 720 (30 days) in production via `fly.toml`, 12 if unset —
+so people re-authenticate periodically; change it in `fly.toml` or with
+`fly secrets set SESSION_TTL_HOURS=168`. A valid Google account that is
 not on the list is rejected with a clear message.
 
 Production **refuses to boot** without `GOOGLE_CLIENT_ID` and `SESSION_SECRET`,

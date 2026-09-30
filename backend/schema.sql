@@ -157,6 +157,9 @@ CREATE TABLE IF NOT EXISTS campaign_contacts (
     notes TEXT DEFAULT '',
     added_at TEXT DEFAULT CURRENT_TIMESTAMP,
     stage_changed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    -- Follow-up tracking, as local YYYY-MM-DD dates chosen by the client
+    last_contacted_at TEXT,
+    next_action_at TEXT,
     UNIQUE(campaign_id, contact_id),
     FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
     FOREIGN KEY(contact_id) REFERENCES contacts(id) ON DELETE CASCADE,

@@ -72,7 +72,7 @@ the committed file is ignored.
 | --- | --- | --- | --- |
 | `GOOGLE_CLIENT_ID` | secret | — | Enables Google sign-in. Unset locally = auth off. |
 | `SESSION_SECRET` | secret | dev value | Signs the session cookie. Rotating it signs everyone out. |
-| `SESSION_TTL_HOURS` | `fly.toml` `[env]` | `12` | **How often people re-authenticate.** |
+| `SESSION_TTL_HOURS` | `fly.toml` `[env]` | `720` (30 days; code default `12`) | **How often people re-authenticate.** |
 | `APP_ORIGIN` | secret | — | Extra allowed CORS origin. |
 | `DB_PATH` | `fly.toml` `[env]` | `backend/db.sqlite` | Where SQLite lives. |
 | `PORT` | `fly.toml` `[env]` | `3002` | Server port. |
@@ -81,7 +81,7 @@ the committed file is ignored.
 To change how often people sign in again:
 
 ```bash
-fly secrets set SESSION_TTL_HOURS=8   # or edit fly.toml and redeploy
+fly secrets set SESSION_TTL_HOURS=168   # or edit fly.toml and redeploy
 ```
 
 ## Local development is unchanged

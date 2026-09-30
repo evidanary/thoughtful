@@ -6,10 +6,18 @@ import {
   removeContactFromCampaign,
   saveCampaignStages,
   deleteCampaign,
+  todayString,
 } from "../api/campaigns";
 import CampaignModal from "./CampaignModal";
 import StageEditorModal from "./StageEditorModal";
 import AddCampaignContactsModal from "./AddCampaignContactsModal";
+import NextActionPicker, {
+  SNOOZES,
+  URGENCY,
+  dueLabel,
+  formatDay,
+  urgencyOf,
+} from "./NextActionPicker";
 import { displayName } from "../api/auth";
 
 const STATUS_COLORS = {
@@ -32,6 +40,31 @@ const formatDate = (value) => {
 const daysBetween = (from, to) =>
   Math.round((new Date(to) - new Date(from)) / 86400000);
 
+const isActionable = (contact) => {
+  const urgency = urgencyOf(contact.next_action_at);
+  return urgency === "overdue" || urgency === "today";
+};
+
+// Overdue first, then due today, then upcoming by date, then unscheduled
+const URGENCY_RANK = { overdue: 0, today: 1, future: 2 };
+const byUrgency = (a, b) => {
+  const ra = URGENCY_RANK[urgencyOf(a.next_action_at)] ?? 3;
+  const rb = URGENCY_RANK[urgencyOf(b.next_action_at)] ?? 3;
+  if (ra !== rb) return ra - rb;
+  if (a.next_action_at !== b.next_action_at)
+    return (a.next_action_at || "").localeCompare(b.next_action_at || "");
+  return a.name.localeCompare(b.name);
+};
+
+const DUE_PANEL_KEY = "thoughtful:campaign-due-panel";
+const readDuePanelPref = () => {
+  try {
+    return localStorage.getItem(DUE_PANEL_KEY) !== "closed";
+  } catch {
+    return true;
+  }
+};
+
 const CampaignBoard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,6 +78,18 @@ const CampaignBoard = () => {
   const [showAddContacts, setShowAddContacts] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [picker, setPicker] = useState(null); // { contactId, rect }
+  const [focusMode, setFocusMode] = useState(false);
+  const [showDuePanel, setShowDuePanel] = useState(readDuePanelPref);
+
+  const toggleDuePanel = () => {
+    setShowDuePanel((open) => {
+      try {
+        localStorage.setItem(DUE_PANEL_KEY, open ? "closed" : "open");
+      } catch {}
+      return !open;
+    });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -95,6 +140,28 @@ const CampaignBoard = () => {
     }
   };
 
+  // Set the next action date (YYYY-MM-DD or null) and/or log a contact today
+  const updateFollowUp = async (contactId, data) => {
+    const local = {};
+    if (data.next_action_at !== undefined) local.next_action_at = data.next_action_at;
+    if (data.log_contact) local.last_contacted_at = todayString();
+    setCampaign((prev) => ({
+      ...prev,
+      contacts: prev.contacts.map((c) =>
+        c.id === contactId ? { ...c, ...local } : c
+      ),
+    }));
+    try {
+      setCampaign(await updateCampaignContact(campaign.id, contactId, data));
+    } catch (err) {
+      console.error(err);
+      load();
+    }
+  };
+
+  const openPicker = (contactId, event) =>
+    setPicker({ contactId, rect: event.currentTarget.getBoundingClientRect() });
+
   // Walk a contact one stage forward or back in this campaign's progression
   const stepContact = (contact, delta) => {
     const index = campaign.stages.findIndex((s) => s.id === contact.stage_id);
@@ -123,7 +190,22 @@ const CampaignBoard = () => {
   if (error) return <p style={{ padding: 30, color: "#c00" }}>{error}</p>;
   if (!campaign) return null;
 
-  const unassigned = campaign.contacts.filter((c) => !c.stage_id);
+  // Focus mode hides everyone who isn't due; every column sorts by urgency
+  const visible = campaign.contacts
+    .filter((c) => !focusMode || isActionable(c))
+    .sort(byUrgency);
+  const unassigned = visible.filter((c) => !c.stage_id);
+  const due = campaign.contacts.filter(isActionable).sort(byUrgency);
+  const overdueCount = due.filter(
+    (c) => urgencyOf(c.next_action_at) === "overdue"
+  ).length;
+  const pickerContact = picker
+    ? campaign.contacts.find((c) => c.id === picker.contactId)
+    : null;
+  const cardActions = {
+    onOpenPicker: openPicker,
+    onLogContact: (contactId) => updateFollowUp(contactId, { log_contact: true }),
+  };
   const daysLeft = campaign.end_date
     ? daysBetween(new Date(), campaign.end_date)
     : null;
@@ -289,66 +371,140 @@ const CampaignBoard = () => {
         </div>
       </div>
 
-      {/* --- Kanban: one column per stage --- */}
+      {/* --- Follow-up toolbar --- */}
       <div
         style={{
           display: "flex",
-          gap: 14,
-          marginTop: 20,
-          overflowX: "auto",
-          flex: 1,
-          paddingBottom: 12,
-          alignItems: "flex-start",
+          alignItems: "center",
+          gap: 12,
+          marginTop: 18,
+          flexShrink: 0,
+          flexWrap: "wrap",
         }}
       >
-        {unassigned.length > 0 && (
-          <Column
-            key="unassigned"
-            title="Unassigned"
-            color="#bbb"
-            contacts={unassigned}
-            campaign={campaign}
-            onRemove={handleRemove}
-            dragging={dragging}
-            setDragging={setDragging}
-            onStep={stepContact}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            color: focusMode ? "#4B0082" : "#555",
+            fontWeight: focusMode ? 600 : 400,
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={focusMode}
+            onChange={(e) => setFocusMode(e.target.checked)}
           />
-        )}
+          Show actionable only
+        </label>
+        <span style={{ fontSize: 12, color: "#888" }}>
+          {due.length === 0
+            ? "Nobody is due"
+            : `${due.length} due${overdueCount ? ` · ${overdueCount} overdue` : ""}`}
+        </span>
+        <span style={{ flex: 1 }} />
+        <button
+          onClick={toggleDuePanel}
+          style={{
+            ...secondaryButton,
+            padding: "6px 12px",
+            fontSize: 12,
+            ...(overdueCount
+              ? { color: URGENCY.overdue.fg, borderColor: URGENCY.overdue.border }
+              : {}),
+          }}
+        >
+          {showDuePanel ? "Hide" : "Show"} due list ({due.length})
+        </button>
+      </div>
 
-        {campaign.stages.map((stage) => {
-          const stageContacts = campaign.contacts.filter(
-            (c) => c.stage_id === stage.id
-          );
-          return (
+      <div style={{ display: "flex", gap: 14, flex: 1, minHeight: 0, marginTop: 12 }}>
+        {/* --- Kanban: one column per stage --- */}
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            overflowX: "auto",
+            flex: 1,
+            minWidth: 0,
+            paddingBottom: 12,
+            alignItems: "flex-start",
+          }}
+        >
+          {unassigned.length > 0 && (
             <Column
-              key={stage.id}
-              title={stage.name}
-              color={stage.color}
-              contacts={stageContacts}
+              key="unassigned"
+              title="Unassigned"
+              color="#bbb"
+              contacts={unassigned}
               campaign={campaign}
               onRemove={handleRemove}
               dragging={dragging}
               setDragging={setDragging}
-              isDropTarget={dragOverStage === stage.id}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOverStage(stage.id);
-              }}
-              onDragLeave={() => setDragOverStage(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOverStage(null);
-                const contactId = parseInt(
-                  e.dataTransfer.getData("text/plain"),
-                  10
-                );
-                if (!Number.isNaN(contactId)) moveContact(contactId, stage.id);
-              }}
               onStep={stepContact}
+              {...cardActions}
             />
-          );
-        })}
+          )}
+
+          {campaign.stages.map((stage) => {
+            const stageContacts = visible.filter(
+              (c) => c.stage_id === stage.id
+            );
+            return (
+              <Column
+                key={stage.id}
+                title={stage.name}
+                color={stage.color}
+                contacts={stageContacts}
+                campaign={campaign}
+                onRemove={handleRemove}
+                dragging={dragging}
+                setDragging={setDragging}
+                isDropTarget={dragOverStage === stage.id}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverStage(stage.id);
+                }}
+                onDragLeave={() => setDragOverStage(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverStage(null);
+                  const contactId = parseInt(
+                    e.dataTransfer.getData("text/plain"),
+                    10
+                  );
+                  if (!Number.isNaN(contactId)) moveContact(contactId, stage.id);
+                }}
+                onStep={stepContact}
+                {...cardActions}
+              />
+            );
+          })}
+        </div>
+
+        {showDuePanel && (
+          <DuePanel
+            contacts={due}
+            stages={campaign.stages}
+            onOpenPicker={openPicker}
+            onUpdate={updateFollowUp}
+          />
+        )}
       </div>
+
+      {pickerContact && (
+        <NextActionPicker
+          value={pickerContact.next_action_at}
+          anchorRect={picker.rect}
+          onChange={(next) =>
+            updateFollowUp(pickerContact.id, { next_action_at: next })
+          }
+          onClose={() => setPicker(null)}
+        />
+      )}
 
       {showEdit && (
         <CampaignModal
@@ -459,6 +615,8 @@ const Column = ({
   onDragLeave,
   onDrop,
   onStep,
+  onOpenPicker,
+  onLogContact,
 }) => (
   <div
     onDragOver={onDragOver}
@@ -510,82 +668,245 @@ const Column = ({
           Drop contacts here
         </p>
       )}
-      {contacts.map((contact) => (
-        <div
-          key={contact.id}
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData("text/plain", String(contact.id));
-            setDragging(contact.id);
-          }}
-          onDragEnd={() => setDragging(null)}
-          style={{
-            background: "#fff",
-            border: "1px solid #e0e0e0",
-            borderRadius: 6,
-            padding: "9px 10px",
-            cursor: "grab",
-            opacity: dragging === contact.id ? 0.4 : 1,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Link
-              to={`/profile/${contact.id}`}
-              style={{
-                flex: 1,
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#4B0082",
-                textDecoration: "none",
-              }}
-            >
-              {contact.name}
-            </Link>
-            <button
-              onClick={() => onRemove(contact.id)}
-              title="Remove from campaign"
-              style={{
-                background: "none",
-                border: "none",
-                color: "#bbb",
-                cursor: "pointer",
-                fontSize: 12,
-                padding: 0,
-              }}
-            >
-              ✕
-            </button>
-          </div>
-          {contact.company && (
-            <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
-              {contact.company}
+      {contacts.map((contact) => {
+        const urgency = urgencyOf(contact.next_action_at);
+        return (
+          <div
+            key={contact.id}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/plain", String(contact.id));
+              setDragging(contact.id);
+            }}
+            onDragEnd={() => setDragging(null)}
+            style={{
+              background: "#fff",
+              border: "1px solid #e0e0e0",
+              borderLeft: urgency
+                ? `4px solid ${URGENCY[urgency].border}`
+                : "1px solid #e0e0e0",
+              borderRadius: 6,
+              padding: urgency ? "9px 10px 9px 7px" : "9px 10px",
+              cursor: "grab",
+              opacity: dragging === contact.id ? 0.4 : 1,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Link
+                to={`/profile/${contact.id}`}
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#4B0082",
+                  textDecoration: "none",
+                }}
+              >
+                {contact.name}
+              </Link>
+              {urgency && <DuePill date={contact.next_action_at} />}
+              <button
+                onClick={() => onRemove(contact.id)}
+                title="Remove from campaign"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#bbb",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  padding: 0,
+                }}
+              >
+                ✕
+              </button>
             </div>
-          )}
-          {/* Nudge between stages without dragging */}
-          <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
-            <button
-              onClick={() => onStep(contact, -1)}
-              disabled={!canStep(campaign, contact, -1)}
-              title="Move to previous stage"
-              style={stepButton(!canStep(campaign, contact, -1))}
+            {contact.company && (
+              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                {contact.company}
+              </div>
+            )}
+            {/* Last contact · next action; Next opens the date picker */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 6,
+                fontSize: 11,
+                color: "#888",
+              }}
             >
-              ◀
-            </button>
-            <button
-              onClick={() => onStep(contact, 1)}
-              disabled={!canStep(campaign, contact, 1)}
-              title="Move to next stage"
-              style={stepButton(!canStep(campaign, contact, 1))}
-            >
-              ▶
-            </button>
+              <span>Last: {formatDay(contact.last_contacted_at) || "—"}</span>
+              <span>·</span>
+              <button
+                onClick={(e) => onOpenPicker(contact.id, e)}
+                title="Set next action date"
+                style={{
+                  background: "none",
+                  border: "none",
+                  borderBottom: "1px dashed #bbb",
+                  padding: 0,
+                  fontSize: 11,
+                  cursor: "pointer",
+                  color: urgency ? URGENCY[urgency].fg : "#4B0082",
+                  fontWeight: urgency === "future" || !urgency ? 400 : 600,
+                }}
+              >
+                Next: {formatDay(contact.next_action_at) || "set date"}
+              </button>
+            </div>
+            {/* Nudge between stages without dragging */}
+            <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+              <button
+                onClick={() => onStep(contact, -1)}
+                disabled={!canStep(campaign, contact, -1)}
+                title="Move to previous stage"
+                style={stepButton(!canStep(campaign, contact, -1))}
+              >
+                ◀
+              </button>
+              <button
+                onClick={() => onStep(contact, 1)}
+                disabled={!canStep(campaign, contact, 1)}
+                title="Move to next stage"
+                style={stepButton(!canStep(campaign, contact, 1))}
+              >
+                ▶
+              </button>
+              <button
+                onClick={() => onLogContact(contact.id)}
+                title="Log that you contacted them today"
+                style={{ ...stepButton(false), flex: 2 }}
+              >
+                ✓ Contacted
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 );
+
+const DuePill = ({ date }) => {
+  const colors = URGENCY[urgencyOf(date)];
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+        color: colors.fg,
+        background: colors.bg,
+        borderRadius: 10,
+        padding: "1px 7px",
+      }}
+    >
+      {dueLabel(date)}
+    </span>
+  );
+};
+
+// Right-hand checklist of everyone overdue or due today in this campaign
+const DuePanel = ({ contacts, stages, onOpenPicker, onUpdate }) => (
+  <div
+    style={{
+      width: 290,
+      flexShrink: 0,
+      background: "#fff",
+      border: "1px solid #e6e6e6",
+      borderTop: "4px solid #4B0082",
+      borderRadius: 8,
+      padding: 12,
+      alignSelf: "flex-start",
+      maxHeight: "100%",
+      overflowY: "auto",
+      boxSizing: "border-box",
+    }}
+  >
+    <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 10 }}>
+      To contact
+    </div>
+    {contacts.length === 0 && (
+      <p style={{ fontSize: 12, color: "#999", margin: 0 }}>
+        All caught up — nobody is due today.
+      </p>
+    )}
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {contacts.map((contact) => {
+        const stage = stages.find((s) => s.id === contact.stage_id);
+        return (
+          <div
+            key={contact.id}
+            style={{
+              borderLeft: `3px solid ${URGENCY[urgencyOf(contact.next_action_at)].border}`,
+              paddingLeft: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Link
+                to={`/profile/${contact.id}`}
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#4B0082",
+                  textDecoration: "none",
+                }}
+              >
+                {contact.name}
+              </Link>
+              <DuePill date={contact.next_action_at} />
+            </div>
+            <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+              {stage ? stage.name : "Unassigned"} · Last:{" "}
+              {formatDay(contact.last_contacted_at) || "—"}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+              <button
+                onClick={() => onUpdate(contact.id, { log_contact: true })}
+                style={{ ...chipButton, background: "#4B0082", color: "#fff", borderColor: "#4B0082" }}
+              >
+                ✓ Contacted
+              </button>
+              {SNOOZES.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() =>
+                    onUpdate(contact.id, { next_action_at: s.apply(todayString()) })
+                  }
+                  title={`Snooze to ${formatDay(s.apply(todayString()))}`}
+                  style={chipButton}
+                >
+                  {s.label}
+                </button>
+              ))}
+              <button
+                onClick={(e) => onOpenPicker(contact.id, e)}
+                title="Pick a date"
+                style={chipButton}
+              >
+                📅
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
+const chipButton = {
+  border: "1px solid #d9c9ec",
+  background: "#fff",
+  color: "#4B0082",
+  borderRadius: 10,
+  padding: "2px 7px",
+  fontSize: 11,
+  fontWeight: 600,
+  cursor: "pointer",
+};
 
 // A contact can step forward/back only while a neighbouring stage exists
 const canStep = (campaign, contact, delta) => {

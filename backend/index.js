@@ -54,6 +54,9 @@ try {
   addColumnIfMissing("notes", "created_by", "TEXT");
   addColumnIfMissing("notes", "updated_by", "TEXT");
   addColumnIfMissing("campaigns", "created_by", "TEXT");
+  // Campaign follow-ups: when we last reached out, and when to next
+  addColumnIfMissing("campaign_contacts", "last_contacted_at", "TEXT");
+  addColumnIfMissing("campaign_contacts", "next_action_at", "TEXT");
 } catch (error) {
   console.error("Error applying column migrations:", error);
 }
@@ -988,6 +991,9 @@ const getStages = (campaignId) =>
     )
     .all(campaignId);
 
+const isDateOnly = (value) =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
 // Contacts in a campaign, with the contact record flattened in
 const getCampaignContacts = (campaignId) =>
   db
@@ -998,6 +1004,8 @@ const getCampaignContacts = (campaignId) =>
          cc.notes AS campaign_notes,
          cc.added_at,
          cc.stage_changed_at,
+         cc.last_contacted_at,
+         cc.next_action_at,
          c.id, c.name, c.email, c.linkedin, c.company
        FROM campaign_contacts cc
        JOIN contacts c ON c.id = cc.contact_id
@@ -1168,6 +1176,8 @@ app.get("/campaigns/combined", (req, res) => {
           stage_name: stage ? stage.name : null,
           stage_color: stage ? stage.color : null,
           stage_position: stage ? stage.position : null,
+          last_contacted_at: c.last_contacted_at,
+          next_action_at: c.next_action_at,
         };
       });
     });
@@ -1175,6 +1185,14 @@ app.get("/campaigns/combined", (req, res) => {
     const rows = Array.from(rowsByContact.values()).sort((a, b) =>
       a.contact.name.localeCompare(b.contact.name)
     );
+    // A person's most pressing follow-up is the earliest across their campaigns
+    rows.forEach((row) => {
+      const dates = Object.values(row.entries)
+        .map((e) => e.next_action_at)
+        .filter(Boolean)
+        .sort();
+      row.next_action_at = dates[0] || null;
+    });
 
     res.json({
       campaigns: campaigns.map(({ contacts, ...rest }) => rest),
@@ -1437,11 +1455,41 @@ app.put("/campaigns/:id/contacts/:contactId", (req, res) => {
     if (!membership)
       return res.status(404).json({ error: "Contact is not in this campaign" });
 
-    const { stage_id, notes } = req.body;
+    const { stage_id, notes, next_action_at, log_contact } = req.body;
+    // "Today" comes from the client so it matches the user's calendar, not the
+    // server's UTC clock
+    const today = isDateOnly(req.body.today)
+      ? req.body.today
+      : new Date().toISOString().slice(0, 10);
     if (stage_id !== undefined) {
+      const newStageId = stage_id === null ? null : parseInt(stage_id, 10);
       db.prepare(
         "UPDATE campaign_contacts SET stage_id = ?, stage_changed_at = ? WHERE id = ?"
-      ).run(stage_id === null ? null : parseInt(stage_id, 10), nowStamp(), membership.id);
+      ).run(newStageId, nowStamp(), membership.id);
+      // Moving someone to a later stage means we just reached out to them
+      const position = (id) =>
+        id
+          ? db.prepare("SELECT position FROM campaign_stages WHERE id = ?").get(id)
+          : null;
+      const from = position(membership.stage_id);
+      const to = position(newStageId);
+      if (to && (!from || to.position > from.position)) {
+        db.prepare(
+          "UPDATE campaign_contacts SET last_contacted_at = ? WHERE id = ?"
+        ).run(today, membership.id);
+      }
+    }
+    if (log_contact) {
+      db.prepare(
+        "UPDATE campaign_contacts SET last_contacted_at = ? WHERE id = ?"
+      ).run(today, membership.id);
+    }
+    if (next_action_at !== undefined) {
+      if (next_action_at !== null && !isDateOnly(next_action_at))
+        return res.status(400).json({ error: "next_action_at must be YYYY-MM-DD" });
+      db.prepare(
+        "UPDATE campaign_contacts SET next_action_at = ? WHERE id = ?"
+      ).run(next_action_at, membership.id);
     }
     if (notes !== undefined) {
       db.prepare("UPDATE campaign_contacts SET notes = ? WHERE id = ?").run(

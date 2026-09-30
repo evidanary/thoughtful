@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getCombinedCampaigns, getAllCampaigns } from "../api/campaigns";
+import { URGENCY, dueLabel, formatDay, urgencyOf } from "./NextActionPicker";
 
 /**
  * Several campaigns side by side. Because every campaign has its own stage
@@ -211,6 +212,7 @@ const CampaignsCombinedPage = () => {
                   <th style={{ ...thStyle, position: "sticky", left: 0, background: "#f7f7f9" }}>
                     Person
                   </th>
+                  <th style={thStyle}>Next action</th>
                   {data.campaigns.map((campaign) => (
                     <th key={campaign.id} style={thStyle}>
                       {campaign.name}
@@ -234,6 +236,25 @@ const CampaignsCombinedPage = () => {
                         </div>
                       )}
                     </td>
+                    <td style={tdStyle}>
+                      {row.next_action_at ? (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                            color: URGENCY[urgencyOf(row.next_action_at)].fg,
+                            background: URGENCY[urgencyOf(row.next_action_at)].bg,
+                            borderRadius: 10,
+                            padding: "2px 8px",
+                          }}
+                        >
+                          {dueLabel(row.next_action_at)}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#ccc" }}>—</span>
+                      )}
+                    </td>
                     {data.campaigns.map((campaign) => {
                       const entry = row.entries[campaign.id];
                       return (
@@ -255,6 +276,11 @@ const CampaignsCombinedPage = () => {
                           ) : (
                             <span style={{ color: "#ccc" }}>—</span>
                           )}
+                          {entry && entry.next_action_at && (
+                            <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                              Next: {formatDay(entry.next_action_at)}
+                            </div>
+                          )}
                         </td>
                       );
                     })}
@@ -263,7 +289,7 @@ const CampaignsCombinedPage = () => {
                 {rows.length === 0 && (
                   <tr>
                     <td
-                      colSpan={data.campaigns.length + 1}
+                      colSpan={data.campaigns.length + 2}
                       style={{ ...tdStyle, color: "#888" }}
                     >
                       Nobody to show.

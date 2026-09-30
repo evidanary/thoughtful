@@ -66,10 +66,19 @@ export const addContactsToCampaign = async (campaignId, contactIds, stageId) => 
   return res.data;
 };
 
+// Local calendar date as YYYY-MM-DD — follow-up dates are days, not instants
+export const todayString = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+// `data` may carry stage_id, notes, next_action_at (YYYY-MM-DD or null) and
+// log_contact: true. The server stamps last_contacted_at with our `today`.
 export const updateCampaignContact = async (campaignId, contactId, data) => {
   const res = await axios.put(
     `${API}/campaigns/${campaignId}/contacts/${contactId}`,
-    data
+    { ...data, today: todayString() }
   );
   return res.data;
 };
