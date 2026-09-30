@@ -57,6 +57,9 @@ try {
   // Campaign follow-ups: when we last reached out, and when to next
   addColumnIfMissing("campaign_contacts", "last_contacted_at", "TEXT");
   addColumnIfMissing("campaign_contacts", "next_action_at", "TEXT");
+  // Stage descriptions, shown on hover in the campaign board
+  addColumnIfMissing("campaign_stages", "description", "TEXT DEFAULT ''");
+  addColumnIfMissing("stage_templates", "description", "TEXT DEFAULT ''");
 } catch (error) {
   console.error("Error applying column migrations:", error);
 }
@@ -1046,9 +1049,11 @@ const applyDefaultStages = (campaignId) => {
     ? templates
     : DEFAULT_STAGES.map((s, i) => ({ ...s, position: i }));
   const insert = db.prepare(
-    "INSERT INTO campaign_stages (campaign_id, name, position, color) VALUES (?, ?, ?, ?)"
+    "INSERT INTO campaign_stages (campaign_id, name, position, color, description) VALUES (?, ?, ?, ?, ?)"
   );
-  source.forEach((s, i) => insert.run(campaignId, s.name, i, s.color || "#4B0082"));
+  source.forEach((s, i) =>
+    insert.run(campaignId, s.name, i, s.color || "#4B0082", s.description || "")
+  );
 };
 
 // --- Stage template (the default set for new campaigns) ---
@@ -1073,7 +1078,11 @@ app.put("/stage-templates", (req, res) => {
     if (!Array.isArray(stages))
       return res.status(400).json({ error: "stages array is required" });
     const clean = stages
-      .map((s) => ({ name: (s.name || "").trim(), color: s.color || "#4B0082" }))
+      .map((s) => ({
+        name: (s.name || "").trim(),
+        color: s.color || "#4B0082",
+        description: (s.description || "").trim(),
+      }))
       .filter((s) => s.name);
     if (!clean.length)
       return res.status(400).json({ error: "At least one stage is required" });
@@ -1081,9 +1090,9 @@ app.put("/stage-templates", (req, res) => {
     const replace = db.transaction(() => {
       db.prepare("DELETE FROM stage_templates").run();
       const insert = db.prepare(
-        "INSERT INTO stage_templates (name, position, color) VALUES (?, ?, ?)"
+        "INSERT INTO stage_templates (name, position, color, description) VALUES (?, ?, ?, ?)"
       );
-      clean.forEach((s, i) => insert.run(s.name, i, s.color));
+      clean.forEach((s, i) => insert.run(s.name, i, s.color, s.description));
     });
     replace();
 
@@ -1306,7 +1315,7 @@ app.get("/campaigns/:id/stages", (req, res) => {
 app.post("/campaigns/:id/stages", (req, res) => {
   try {
     const campaignId = parseInt(req.params.id, 10);
-    const { name, color } = req.body;
+    const { name, color, description } = req.body;
     if (!name || !name.trim())
       return res.status(400).json({ error: "Stage name is required" });
     const maxPos = db
@@ -1315,8 +1324,8 @@ app.post("/campaigns/:id/stages", (req, res) => {
       )
       .get(campaignId).p;
     db.prepare(
-      "INSERT INTO campaign_stages (campaign_id, name, position, color) VALUES (?, ?, ?, ?)"
-    ).run(campaignId, name.trim(), maxPos + 1, color || "#4B0082");
+      "INSERT INTO campaign_stages (campaign_id, name, position, color, description) VALUES (?, ?, ?, ?, ?)"
+    ).run(campaignId, name.trim(), maxPos + 1, color || "#4B0082", (description || "").trim());
     res.status(201).json(getStages(campaignId));
   } catch (error) {
     console.error("Error adding campaign stage:", error);
@@ -1337,6 +1346,7 @@ app.put("/campaigns/:id/stages", (req, res) => {
         id: s.id ? parseInt(s.id, 10) : null,
         name: (s.name || "").trim(),
         color: s.color || "#4B0082",
+        description: (s.description || "").trim(),
       }))
       .filter((s) => s.name);
     if (!clean.length)
@@ -1350,14 +1360,14 @@ app.put("/campaigns/:id/stages", (req, res) => {
       clean.forEach((stage, i) => {
         if (stage.id) {
           db.prepare(
-            "UPDATE campaign_stages SET name = ?, position = ?, color = ?, updated_at = ? WHERE id = ? AND campaign_id = ?"
-          ).run(stage.name, i, stage.color, nowStamp(), stage.id, campaignId);
+            "UPDATE campaign_stages SET name = ?, position = ?, color = ?, description = ?, updated_at = ? WHERE id = ? AND campaign_id = ?"
+          ).run(stage.name, i, stage.color, stage.description, nowStamp(), stage.id, campaignId);
         } else {
           const result = db
             .prepare(
-              "INSERT INTO campaign_stages (campaign_id, name, position, color) VALUES (?, ?, ?, ?)"
+              "INSERT INTO campaign_stages (campaign_id, name, position, color, description) VALUES (?, ?, ?, ?, ?)"
             )
-            .run(campaignId, stage.name, i, stage.color);
+            .run(campaignId, stage.name, i, stage.color, stage.description);
           stage.id = result.lastInsertRowid;
         }
       });

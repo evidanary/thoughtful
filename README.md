@@ -63,6 +63,9 @@ engaged → Closed), then diverge freely.
 - `/campaigns` lists them newest first with a headcount per stage
 - `/campaigns/:id` is a kanban board — drag people between stages, or use the
   ◀ ▶ steppers. Description, dates, days remaining and creator sit above it.
+  Hover the ⓘ beside a stage name to read what that stage means; write
+  descriptions in "Edit stages" (or in the default template, which new
+  campaigns copy).
 - `/campaigns/combined?ids=1,2` puts several campaigns side by side. Since
   their stages differ, the roll-up is a matrix: one row per person, one column
   per campaign, each cell their stage there.

@@ -457,6 +457,7 @@ const CampaignBoard = () => {
               <Column
                 key={stage.id}
                 title={stage.name}
+                description={stage.description}
                 color={stage.color}
                 contacts={stageContacts}
                 campaign={campaign}
@@ -604,6 +605,7 @@ const CampaignBoard = () => {
 // way to move someone without dragging.
 const Column = ({
   title,
+  description,
   color,
   contacts,
   campaign,
@@ -643,8 +645,19 @@ const Column = ({
         marginBottom: 10,
       }}
     >
-      <span style={{ fontSize: 13, fontWeight: 700, color: "#333" }}>
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#333",
+          minWidth: 0,
+        }}
+      >
         {title}
+        {description !== undefined && <StageInfo description={description} />}
       </span>
       <span
         style={{
@@ -788,6 +801,74 @@ const Column = ({
     </div>
   </div>
 );
+
+// ⓘ beside a stage name; hovering shows what the stage means. The tooltip is
+// fixed-positioned so the board's scrolling columns can't clip it.
+const StageInfo = ({ description }) => {
+  const [rect, setRect] = useState(null);
+  const text = (description || "").trim();
+  const show = (e) => setRect(e.currentTarget.getBoundingClientRect());
+  const hide = () => setRect(null);
+  return (
+    <>
+      <span
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        tabIndex={0}
+        aria-label={text || "No description"}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 15,
+          height: 15,
+          borderRadius: "50%",
+          border: `1px solid ${text ? "#4B0082" : "#bbb"}`,
+          color: text ? "#4B0082" : "#bbb",
+          fontSize: 10,
+          fontWeight: 700,
+          fontStyle: "italic",
+          fontFamily: "Georgia, serif",
+          cursor: "help",
+          flexShrink: 0,
+          outline: "none",
+        }}
+      >
+        i
+      </span>
+      {rect && (
+        <div
+          role="tooltip"
+          style={{
+            position: "fixed",
+            top: rect.bottom + 8,
+            left: Math.max(12, Math.min(rect.left - 12, window.innerWidth - 272)),
+            width: 260,
+            zIndex: 3000,
+            background: "#2b1a3d",
+            color: "#fff",
+            borderRadius: 8,
+            padding: "9px 11px",
+            fontSize: 12,
+            fontWeight: 400,
+            lineHeight: 1.45,
+            whiteSpace: "pre-wrap",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+            pointerEvents: "none",
+          }}
+        >
+          {text || (
+            <span style={{ color: "#c9b8dd" }}>
+              No description yet — add one in Edit stages.
+            </span>
+          )}
+        </div>
+      )}
+    </>
+  );
+};
 
 const DuePill = ({ date }) => {
   const colors = URGENCY[urgencyOf(date)];

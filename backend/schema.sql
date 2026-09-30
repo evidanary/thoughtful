@@ -143,6 +143,8 @@ CREATE TABLE IF NOT EXISTS campaign_stages (
     name TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0,
     color TEXT DEFAULT '#4B0082',
+    -- What this stage means; shown on hover over the column's info icon
+    description TEXT DEFAULT '',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
@@ -172,6 +174,7 @@ CREATE TABLE IF NOT EXISTS stage_templates (
     name TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0,
     color TEXT DEFAULT '#4B0082',
+    description TEXT DEFAULT '',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );

@@ -30,6 +30,7 @@ const StageEditorModal = ({
       id: s.id || null,
       name: s.name,
       color: s.color || "#4B0082",
+      description: s.description || "",
       contact_count: s.contact_count || 0,
     }))
   );
@@ -68,6 +69,7 @@ const StageEditorModal = ({
         id: null,
         name: "",
         color: PALETTE[prev.length % PALETTE.length],
+        description: "",
         contact_count: 0,
       },
     ]);
@@ -111,7 +113,7 @@ const StageEditorModal = ({
         style={{
           background: "#fff",
           borderRadius: 10,
-          width: 560,
+          width: 620,
           maxWidth: "92vw",
           maxHeight: "88vh",
           overflowY: "auto",
@@ -134,7 +136,7 @@ const StageEditorModal = ({
               key={stage.id || `new-${i}`}
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: "flex-start",
                 gap: 8,
                 border: "1px solid #eee",
                 borderRadius: 8,
@@ -148,6 +150,7 @@ const StageEditorModal = ({
                   color: "#999",
                   width: 18,
                   textAlign: "right",
+                  lineHeight: "30px",
                 }}
               >
                 {i + 1}
@@ -174,21 +177,46 @@ const StageEditorModal = ({
                 ))}
               </select>
 
-              <input
-                type="text"
-                value={stage.name}
-                placeholder="Stage name"
-                autoFocus={!stage.name}
-                onChange={(e) => update(i, { name: e.target.value })}
+              <div
                 style={{
                   flex: 1,
-                  padding: "7px 10px",
-                  border: "1px solid #ddd",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  outline: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  minWidth: 0,
                 }}
-              />
+              >
+                <input
+                  type="text"
+                  value={stage.name}
+                  placeholder="Stage name"
+                  autoFocus={!stage.name}
+                  onChange={(e) => update(i, { name: e.target.value })}
+                  style={{
+                    padding: "7px 10px",
+                    border: "1px solid #ddd",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    outline: "none",
+                  }}
+                />
+                <textarea
+                  value={stage.description}
+                  placeholder="What does this stage mean? (shown on hover)"
+                  rows={2}
+                  onChange={(e) => update(i, { description: e.target.value })}
+                  style={{
+                    padding: "6px 10px",
+                    border: "1px solid #e4e4e4",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontFamily: "inherit",
+                    color: "#555",
+                    resize: "vertical",
+                    outline: "none",
+                  }}
+                />
+              </div>
 
               {stage.contact_count > 0 && (
                 <span
