@@ -108,22 +108,23 @@ const ContactProfile = ({ contactId }) => {
     setActiveTagIndex(-1);
   };
 
+  // Empty input lists every tag the contact doesn't have yet, so suggestions show on focus
+  const showTagSuggestions = (val) => {
+    const existing = contact?.tags || [];
+    const query = val.trim().toLowerCase();
+    setTagSuggestions(
+      allTagDefs.filter(
+        (d) => d.name.toLowerCase().includes(query) && !existing.includes(d.name)
+      )
+    );
+    setShowTagDropdown(true);
+  };
+
   const handleTagInputChange = (e) => {
     const val = e.target.value;
     setNewTag(val);
     setActiveTagIndex(-1);
-    if (val.trim()) {
-      const existing = contact?.tags || [];
-      const filtered = allTagDefs.filter(
-        (d) =>
-          d.name.toLowerCase().includes(val.toLowerCase()) &&
-          !existing.includes(d.name)
-      );
-      setTagSuggestions(filtered);
-      setShowTagDropdown(true);
-    } else {
-      setShowTagDropdown(false);
-    }
+    showTagSuggestions(val);
   };
 
   const handleTagKeyDown = (e) => {
@@ -241,6 +242,9 @@ const ContactProfile = ({ contactId }) => {
 
   if (!contact) return <div>Loading...</div>;
 
+  const councilNames = new Set(allTagDefs.filter((d) => d.is_council).map((d) => d.name));
+  const councilTags = contact.tags.filter((t) => councilNames.has(t));
+
   return (
     <div style={{ display: "flex", padding: 20 }}>
       {/* Left panel */}
@@ -251,8 +255,26 @@ const ContactProfile = ({ contactId }) => {
           borderRight: "1px solid #ccc",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           <h2>{highlightText(contact.name, highlight)}</h2>
+          {councilTags.map((name) => (
+            <span
+              key={name}
+              title={`Member of the ${name} council — remove the tag below to take them off`}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#4B0082",
+                background: "#fff4f6",
+                border: "1px solid #FFB6C1",
+                borderRadius: 20,
+                padding: "3px 10px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              🏛️ {name}
+            </span>
+          ))}
           <button
             onClick={handleEditClick}
             style={{
@@ -393,9 +415,7 @@ const ContactProfile = ({ contactId }) => {
             placeholder="Add tag (Enter to save)"
             onChange={handleTagInputChange}
             onKeyDown={handleTagKeyDown}
-            onFocus={() => {
-              if (newTag.trim()) setShowTagDropdown(true);
-            }}
+            onFocus={() => showTagSuggestions(newTag)}
             style={{
               width: "100%",
               padding: "7px 10px",
@@ -435,7 +455,10 @@ const ContactProfile = ({ contactId }) => {
                   }}
                   onMouseEnter={() => setActiveTagIndex(i)}
                 >
-                  <div style={{ fontWeight: 500, fontSize: 13 }}>{def.name}</div>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                    {def.is_council ? "🏛️ " : ""}
+                    {def.name}
+                  </div>
                   {def.description && (
                     <div style={{ fontSize: 11, color: "#999", marginTop: 1 }}>{def.description}</div>
                   )}

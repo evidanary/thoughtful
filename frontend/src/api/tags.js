@@ -11,17 +11,24 @@ export const getTagDefinitions = async () => {
   return res.data;
 };
 
-export const createTagDefinition = async (name, description) => {
-  const res = await axios.post(`${API}/tag-definitions`, { name, description });
+// fields: { name, description, is_council, council_target }
+export const createTagDefinition = async (fields) => {
+  const res = await axios.post(`${API}/tag-definitions`, fields);
   return res.data;
 };
 
-export const updateTagDefinition = async (id, name, description) => {
-  const res = await axios.put(`${API}/tag-definitions/${id}`, { name, description });
+export const updateTagDefinition = async (id, fields) => {
+  const res = await axios.put(`${API}/tag-definitions/${id}`, fields);
   return res.data;
 };
 
 export const deleteTagDefinition = async (id) => {
   const res = await axios.delete(`${API}/tag-definitions/${id}`);
+  return res.data;
+};
+
+// Council tags with their members: [{ id, name, description, council_target, members: [{ id, name, company }] }]
+export const getCouncils = async () => {
+  const res = await axios.get(`${API}/councils`);
   return res.data;
 };

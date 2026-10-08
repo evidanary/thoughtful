@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AddContactModal from "./AddContactModal";
 import QuickAddModal from "./QuickAddModal";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getAuthConfig, getCurrentUser, signOut, displayName } from "../api/auth";
+import { getCouncils } from "../api/tags";
 /**
  *  Brand Gradient Color Meaning:
   - Outlasting the competition: Indigo (#4B0082)
@@ -24,6 +25,170 @@ const NAV_ITEMS = [
   { to: "/social-media", icon: "📱", label: "Social Media" },
   { to: "/stamina-viz", icon: "🌐", label: "Stamina Viz" },
 ];
+
+const COUNCIL_PANEL_WIDTH = 240;
+
+// Hover menu of councils (tags flagged as councils on the Tags page). Hovering a
+// council opens a second menu of its members. The sidebar scrolls, which would clip
+// an absolutely positioned flyout, so both menus are position: fixed.
+const CouncilsMenu = () => {
+  const [open, setOpen] = useState(false);
+  const [councils, setCouncils] = useState(null);
+  const [anchor, setAnchor] = useState(null);
+  const [hovered, setHovered] = useState(null); // { id, top }
+  const triggerRef = useRef(null);
+  const closeTimer = useRef(null);
+
+  const show = () => {
+    clearTimeout(closeTimer.current);
+    if (open) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setAnchor({ left: rect.right + 6, top: rect.top });
+    setOpen(true);
+    setHovered(null);
+    getCouncils().then(setCouncils).catch(() => setCouncils([]));
+  };
+
+  // Short delay so the pointer can cross the gap between trigger and menus
+  const scheduleClose = () => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 180);
+  };
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  const close = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(false);
+  };
+
+  const hoveredCouncil = hovered && (councils || []).find((c) => c.id === hovered.id);
+
+  return (
+    <div onMouseEnter={show} onMouseLeave={scheduleClose}>
+      <div
+        ref={triggerRef}
+        onClick={() => (open ? close() : show())}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          color: open ? "#4B0082" : "#555",
+          background: open ? "#f3eaff" : "transparent",
+          fontSize: 14,
+          fontWeight: open ? 600 : 500,
+          padding: "9px 12px",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+      >
+        <span style={{ fontSize: 16 }}>🏛️</span>
+        <span style={{ flex: 1 }}>Councils</span>
+        <span style={{ fontSize: 10, color: "#aaa" }}>▸</span>
+      </div>
+
+      {open && anchor && (
+        <div
+          style={{
+            ...councilPanel,
+            left: anchor.left,
+            top: Math.min(anchor.top, window.innerHeight - 320),
+          }}
+        >
+          {councils === null ? (
+            <div style={councilEmpty}>Loading…</div>
+          ) : councils.length === 0 ? (
+            <div style={councilEmpty}>
+              No councils yet. Mark a tag as a council on the{" "}
+              <Link to="/tags" onClick={close} style={{ color: "#4B0082" }}>
+                Tags page
+              </Link>
+              .
+            </div>
+          ) : (
+            councils.map((council) => {
+              const active = hovered?.id === council.id;
+              const count = council.members.length;
+              return (
+                <div
+                  key={council.id}
+                  onMouseEnter={(e) =>
+                    setHovered({ id: council.id, top: e.currentTarget.getBoundingClientRect().top })
+                  }
+                  title={council.description || undefined}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    cursor: "default",
+                    color: active ? "#4B0082" : "#333",
+                    background: active ? "#f3eaff" : "transparent",
+                    fontWeight: active ? 600 : 500,
+                  }}
+                >
+                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {council.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: council.council_target && count >= council.council_target ? "#1a7f37" : "#999",
+                    }}
+                  >
+                    {council.council_target ? `${count}/${council.council_target}` : count}
+                  </span>
+                  <span style={{ fontSize: 10, color: "#bbb" }}>▸</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {open && anchor && hoveredCouncil && (
+        <div
+          style={{
+            ...councilPanel,
+            left: anchor.left + COUNCIL_PANEL_WIDTH + 4,
+            top: Math.max(8, Math.min(hovered.top - 6, window.innerHeight - 340)),
+          }}
+        >
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, padding: "4px 12px 6px" }}>
+            {hoveredCouncil.name}
+          </div>
+          {hoveredCouncil.members.length === 0 ? (
+            <div style={councilEmpty}>
+              Nobody yet. Add the "{hoveredCouncil.name}" tag to a contact.
+            </div>
+          ) : (
+            hoveredCouncil.members.map((member) => (
+              <Link
+                key={member.id}
+                to={`/profile/${member.id}`}
+                onClick={close}
+                style={{
+                  display: "block",
+                  padding: "7px 12px",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                  color: "#333",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f6fc")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#4B0082" }}>{member.name}</div>
+                {member.company && <div style={{ fontSize: 11, color: "#999" }}>{member.company}</div>}
+              </Link>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SideBar = ({ onShowBulkEmail }) => {
   const [showModal, setShowModal] = useState(false);
@@ -182,6 +347,7 @@ const SideBar = ({ onShowBulkEmail }) => {
             </Link>
           );
         })}
+        <CouncilsMenu />
       </nav>
 
       {/* Who is signed in, and the way out */}
@@ -266,6 +432,27 @@ const SideBar = ({ onShowBulkEmail }) => {
       {showQuickAdd && <QuickAddModal onClose={() => setShowQuickAdd(false)} />}
     </div>
   );
+};
+
+const councilPanel = {
+  position: "fixed",
+  width: COUNCIL_PANEL_WIDTH,
+  maxHeight: 320,
+  overflowY: "auto",
+  boxSizing: "border-box",
+  background: "#fff",
+  border: "1px solid #e0e0e0",
+  borderRadius: 8,
+  boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+  padding: 6,
+  zIndex: 1000,
+};
+
+const councilEmpty = {
+  fontSize: 12,
+  color: "#999",
+  padding: "8px 12px",
+  lineHeight: 1.5,
 };
 
 const filledButton = {

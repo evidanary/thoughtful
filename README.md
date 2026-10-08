@@ -82,6 +82,13 @@ engaged → Closed), then diverge freely.
 **Tags** — a tag library with descriptions at `/tags`. Click any tag to expand
 the row and see everyone carrying it.
 
+**Councils** — small groups of people you are deliberately building
+relationships with. A council is just a tag with the 🏛️ Council box ticked on
+`/tags`, plus an optional target size. Tagging a contact adds them to it. Hover
+🏛️ Councils in the sidebar to see every council with its headcount (e.g. 3/7),
+then hover a council to see its members and click through to a profile.
+Members get a council badge beside their name on their profile.
+
 **Action items & inbox** — `@action` and `@ask` lines inside notes are tracked
 separately. Quick Add captures a note before you know who it belongs to;
 `/quick-notes` is where you file them against a contact later.

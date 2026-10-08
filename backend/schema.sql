@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS tag_definitions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     description TEXT DEFAULT '',
+    is_council INTEGER DEFAULT 0,
+    council_target INTEGER,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );

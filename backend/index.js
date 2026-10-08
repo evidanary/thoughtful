@@ -60,6 +60,9 @@ try {
   // Stage descriptions, shown on hover in the campaign board
   addColumnIfMissing("campaign_stages", "description", "TEXT DEFAULT ''");
   addColumnIfMissing("stage_templates", "description", "TEXT DEFAULT ''");
+  // Councils: a tag flagged as a council, with an optional target headcount
+  addColumnIfMissing("tag_definitions", "is_council", "INTEGER DEFAULT 0");
+  addColumnIfMissing("tag_definitions", "council_target", "INTEGER");
 } catch (error) {
   console.error("Error applying column migrations:", error);
 }
@@ -146,6 +149,7 @@ const API_SEGMENTS = new Set([
   "search",
   "campaigns",
   "stage-templates",
+  "councils",
 ]);
 
 // The built React app, served from this same process in production. Registered
@@ -784,6 +788,11 @@ app.get("/search", (req, res) => {
 });
 
 // Tag Definitions endpoints
+const parseCouncilTarget = (value) => {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
 app.get("/tag-definitions", (req, res) => {
   try {
     const defs = db.prepare(`
@@ -802,12 +811,12 @@ app.get("/tag-definitions", (req, res) => {
 
 app.post("/tag-definitions", (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, is_council, council_target } = req.body;
     if (!name) return res.status(400).json({ error: "Name is required" });
     const now = new Date().toISOString().slice(0, 19).replace("T", " ");
     const result = db
-      .prepare("INSERT INTO tag_definitions (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)")
-      .run(name.trim(), description || "", now, now);
+      .prepare("INSERT INTO tag_definitions (name, description, is_council, council_target, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .run(name.trim(), description || "", is_council ? 1 : 0, parseCouncilTarget(council_target), now, now);
     const def = db.prepare("SELECT * FROM tag_definitions WHERE id = ?").get(result.lastInsertRowid);
     res.status(201).json(def);
   } catch (error) {
@@ -822,12 +831,12 @@ app.post("/tag-definitions", (req, res) => {
 app.put("/tag-definitions/:id", (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { name, description } = req.body;
+    const { name, description, is_council, council_target } = req.body;
     if (!name) return res.status(400).json({ error: "Name is required" });
     const now = new Date().toISOString().slice(0, 19).replace("T", " ");
     const result = db
-      .prepare("UPDATE tag_definitions SET name = ?, description = ?, updated_at = ? WHERE id = ?")
-      .run(name.trim(), description || "", now, id);
+      .prepare("UPDATE tag_definitions SET name = ?, description = ?, is_council = ?, council_target = ?, updated_at = ? WHERE id = ?")
+      .run(name.trim(), description || "", is_council ? 1 : 0, parseCouncilTarget(council_target), now, id);
     if (result.changes === 0) return res.status(404).json({ error: "Tag not found" });
     res.json(db.prepare("SELECT * FROM tag_definitions WHERE id = ?").get(id));
   } catch (error) {
@@ -847,6 +856,26 @@ app.delete("/tag-definitions/:id", (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting tag definition:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Councils are tag definitions flagged is_council; members are contacts carrying that tag
+app.get("/councils", (req, res) => {
+  try {
+    const councils = db
+      .prepare("SELECT id, name, description, council_target FROM tag_definitions WHERE is_council = 1 ORDER BY name COLLATE NOCASE")
+      .all();
+    const membersStmt = db.prepare(`
+      SELECT c.id, c.name, c.company
+      FROM tags t JOIN contacts c ON c.id = t.contact_id
+      WHERE t.name = ?
+      GROUP BY c.id
+      ORDER BY c.name COLLATE NOCASE
+    `);
+    res.json(councils.map((council) => ({ ...council, members: membersStmt.all(council.name) })));
+  } catch (error) {
+    console.error("Error fetching councils:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

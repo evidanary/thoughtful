@@ -52,6 +52,10 @@ Time-bound outreach pushes. **Every campaign owns its own ordered stage list** �
 - `GET /campaigns/combined?ids=1,2` rolls several campaigns into one person-per-row matrix. It is registered **before** `/campaigns/:id` — keep it there or Express will treat "combined" as an id.
 - Frontend: `CampaignsPage.js` (list + stage counts + combine picker), `CampaignBoard.js` (kanban at `/campaigns/:id`, HTML5 drag-and-drop, no DnD library), `CampaignsCombinedPage.js`, `StageEditorModal.js` (reused for both a campaign's stages and the default template), `ContactCampaigns.js` (the section on a contact's profile).
 
+## Councils
+
+A council is a `tag_definitions` row with `is_council = 1` (plus optional `council_target`); membership is simply carrying that tag. `GET /councils` returns each council with its members. Frontend: `CouncilsMenu` in `SideBar.js` (two-level hover flyout, `position: fixed` because the sidebar scrolls), the council checkbox/target in `TagsPage.js`, and the 🏛️ badge beside the name in `ContactProfile.js`. `PUT /tag-definitions/:id` overwrites `is_council`/`council_target`, so always send them.
+
 ## Auth & attribution
 
 - Access is a hard-coded allow list in `backend/allowed-users.js`. Google Identity Services issues an ID token, `backend/auth.js` verifies it and mints an HttpOnly session cookie; sessions expire after `SESSION_TTL_HOURS` (code default 12; production sets 720 = 30 days in `fly.toml` `[env]`, which is what actually applies there).

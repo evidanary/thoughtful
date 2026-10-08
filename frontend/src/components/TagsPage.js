@@ -3,12 +3,51 @@ import { Link } from "react-router-dom";
 import { getTagDefinitions, createTagDefinition, updateTagDefinition, deleteTagDefinition } from "../api/tags";
 import { getAllContacts } from "../api/contacts";
 
+const EMPTY_TAG = { name: "", description: "", is_council: false, council_target: "" };
+
+// Marks a tag as a council (shown in the sidebar's Councils menu) with an optional target headcount
+function CouncilFields({ data, onChange, onEnter }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12, fontSize: 13, color: "#555" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+        <input
+          type="checkbox"
+          checked={!!data.is_council}
+          onChange={(e) => onChange({ is_council: e.target.checked })}
+        />
+        🏛️ Council
+      </label>
+      {data.is_council && (
+        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          Target size
+          <input
+            type="number"
+            min="1"
+            value={data.council_target}
+            onChange={(e) => onChange({ council_target: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && onEnter()}
+            placeholder="e.g. 7"
+            style={{ width: 70, padding: "5px 8px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13 }}
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
+const tagPayload = (data) => ({
+  name: data.name.trim(),
+  description: data.description.trim(),
+  is_council: !!data.is_council,
+  council_target: data.is_council ? data.council_target : null,
+});
+
 export default function TagsPage() {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ name: "", description: "" });
-  const [newTag, setNewTag] = useState({ name: "", description: "" });
+  const [editData, setEditData] = useState(EMPTY_TAG);
+  const [newTag, setNewTag] = useState(EMPTY_TAG);
   const [showNewForm, setShowNewForm] = useState(false);
   const [error, setError] = useState("");
   const [expandedTag, setExpandedTag] = useState(null);
@@ -53,8 +92,8 @@ export default function TagsPage() {
     if (!newTag.name.trim()) return;
     setError("");
     try {
-      await createTagDefinition(newTag.name.trim(), newTag.description.trim());
-      setNewTag({ name: "", description: "" });
+      await createTagDefinition(tagPayload(newTag));
+      setNewTag(EMPTY_TAG);
       setShowNewForm(false);
       fetchTags();
     } catch (err) {
@@ -66,7 +105,7 @@ export default function TagsPage() {
     if (!editData.name.trim()) return;
     setError("");
     try {
-      await updateTagDefinition(id, editData.name.trim(), editData.description.trim());
+      await updateTagDefinition(id, tagPayload(editData));
       setEditingId(null);
       setTagContacts({});
       setExpandedTag(null);
@@ -153,6 +192,11 @@ export default function TagsPage() {
               />
             </div>
           </div>
+          <CouncilFields
+            data={newTag}
+            onChange={(patch) => setNewTag((p) => ({ ...p, ...patch }))}
+            onEnter={handleCreate}
+          />
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={handleCreate}
@@ -167,7 +211,7 @@ export default function TagsPage() {
               Create
             </button>
             <button
-              onClick={() => { setShowNewForm(false); setNewTag({ name: "", description: "" }); }}
+              onClick={() => { setShowNewForm(false); setNewTag(EMPTY_TAG); }}
               style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid #ddd", background: "#fff", fontSize: 13, cursor: "pointer", color: "#555" }}
             >
               Cancel
@@ -223,6 +267,11 @@ export default function TagsPage() {
                       />
                     </div>
                   </div>
+                  <CouncilFields
+                    data={editData}
+                    onChange={(patch) => setEditData((p) => ({ ...p, ...patch }))}
+                    onEnter={() => handleEditSave(tag.id)}
+                  />
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
                       onClick={() => handleEditSave(tag.id)}
@@ -267,6 +316,12 @@ export default function TagsPage() {
                       <span style={{ fontSize: 11, color: "#bbb" }}>
                         {tag.usage_count} contact{tag.usage_count !== 1 ? "s" : ""}
                       </span>
+                      {!!tag.is_council && (
+                        <span style={councilChip}>
+                          🏛️ Council
+                          {tag.council_target ? ` · ${tag.usage_count}/${tag.council_target}` : ""}
+                        </span>
+                      )}
                     </div>
                     {tag.description ? (
                       <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>{tag.description}</div>
@@ -326,7 +381,16 @@ export default function TagsPage() {
                   </div>
                   <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                     <button
-                      onClick={() => { setEditingId(tag.id); setEditData({ name: tag.name, description: tag.description || "" }); setError(""); }}
+                      onClick={() => {
+                        setEditingId(tag.id);
+                        setEditData({
+                          name: tag.name,
+                          description: tag.description || "",
+                          is_council: !!tag.is_council,
+                          council_target: tag.council_target || "",
+                        });
+                        setError("");
+                      }}
                       style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #ddd", background: "#fff", fontSize: 12, cursor: "pointer", color: "#555" }}
                     >
                       Edit
@@ -347,3 +411,13 @@ export default function TagsPage() {
     </div>
   );
 }
+
+const councilChip = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#4B0082",
+  background: "#fff4f6",
+  border: "1px solid #FFB6C1",
+  borderRadius: 20,
+  padding: "2px 8px",
+};
